@@ -1,0 +1,41 @@
+name: Publish
+# Maven Central deploy skeleton.
+#
+# TODO(maintainer): before this workflow can publish, finish wiring up the release:
+#   1. Add a Sonatype Central / OSSRH account and register the `net.cookiemunch`
+#      namespace (verify it via the DNS/GitHub method Central requires).
+#   2. Add these repository secrets:
+#        OSSRH_USERNAME          - Sonatype Central user token name
+#        OSSRH_TOKEN             - Sonatype Central user token secret
+#        MAVEN_GPG_PRIVATE_KEY   - ASCII-armored GPG private key used to sign artifacts
+#        MAVEN_GPG_PASSPHRASE    - passphrase for that GPG key
+#   3. Add a <distributionManagement> block plus the maven-gpg-plugin,
+#      maven-source-plugin, maven-javadoc-plugin and the central-publishing (or
+#      nexus-staging) plugin to pom.xml under a `release` profile. Central requires
+#      signed sources + javadoc jars.
+on:
+  release:
+    types: [published]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          server-id: central
+          server-username: OSSRH_USERNAME
+          server-password: OSSRH_TOKEN
+          gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
+      - name: Deploy to Maven Central
+        env:
+          OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+        # TODO: switch to `mvn -P release deploy` once the release profile + signing
+        # plugins are added to pom.xml (see header). Left as verify so an unsigned,
+        # unconfigured release cannot silently ship a broken artifact.
+        run: mvn -q -DskipTests=false verify

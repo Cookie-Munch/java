@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>net.cookiemunch</groupId>
+  <artifactId>cookiemunch</artifactId>
+  <version>0.1.0</version>
+  <packaging>jar</packaging>
+
+  <name>Cookie Munch Java SDK</name>
+  <description>A small, typed Java client for the Cookie Munch Developer API (the /v1 surface) plus the public consent-ingest endpoint.</description>
+  <url>https://cookiemunch.net</url>
+
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>https://opensource.org/licenses/MIT</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <!-- Repository (also required by Maven Central). -->
+  <scm>
+    <connection>scm:git:https://github.com/Cookie-Munch/java.git</connection>
+    <developerConnection>scm:git:git@github.com:Cookie-Munch/java.git</developerConnection>
+    <url>https://github.com/Cookie-Munch/java</url>
+  </scm>
+
+  <!-- Required by Maven Central. -->
+  <developers>
+    <developer>
+      <name>Cookie Munch</name>
+      <organization>Cookie Munch</organization>
+      <organizationUrl>https://cookiemunch.net</organizationUrl>
+    </developer>
+  </developers>
+
+  <properties>
+    <maven.compiler.release>17</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <jackson.version>2.17.2</jackson.version>
+    <junit.version>5.10.2</junit.version>
+  </properties>
+
+  <dependencies>
+    <!-- The only runtime dependency: Jackson for JSON binding. HTTP is the JDK's
+         built-in java.net.http.HttpClient (no extra dependency). -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
+
+    <!-- Test-only: JUnit 5. -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${junit.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.13.0</version>
+        <configuration>
+          <release>17</release>
+          <compilerArgs>
+            <!-- Retain parameter names so Jackson binds records/constructors reliably. -->
+            <arg>-parameters</arg>
+          </compilerArgs>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.2.5</version>
+      </plugin>
+    </plugins>
+  </build>
+</project>
