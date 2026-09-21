@@ -185,4 +185,13 @@ public final class SitesResource {
   public Map<String, Object> blocked(String cbid) {
     return client.requestMap("GET", base(cbid) + "/blocked", null);
   }
+
+  /**
+   * Read a cookie declaration exported from another CMP and translate its categories into
+   * ours — {@code POST /v1/sites/{cbid}/import}. Nothing is applied; the result comes back
+   * for review, with the rows whose category could not be placed listed separately.
+   */
+  public Map<String, Object> importDeclaration(String cbid, String data) {
+    return client.requestMap("POST", base(cbid) + "/import", Map.of("data", data));
+  }
 }

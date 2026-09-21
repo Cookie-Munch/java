@@ -3,6 +3,7 @@ package net.cookiemunch;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.cookiemunch.model.ConsentIngest;
 import net.cookiemunch.model.Identity;
+import net.cookiemunch.model.SupportedLanguage;
 import net.cookiemunch.model.Usage;
 
 import java.io.IOException;
@@ -115,6 +116,14 @@ public final class CookieMunch {
   /** Identity / echo for SDK bootstrapping — {@code GET /v1/me}. */
   public Identity me() {
     return get("/v1/me", Identity.class);
+  }
+
+  /**
+   * The languages the banner already has copy for — {@code GET /v1/languages}. Diff it
+   * against your visitors' locales to find the ones you still have to write.
+   */
+  public List<SupportedLanguage> languages() {
+    return getList("/v1/languages", SupportedLanguage.class);
   }
 
   /** Current resource usage for the org — {@code GET /v1/usage}. */
