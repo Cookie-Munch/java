@@ -16,4 +16,14 @@ public final class AssetsResource {
   public AssetUploadResult upload(AssetUpload input) {
     return client.request("POST", "/v1/assets", input, AssetUploadResult.class);
   }
+
+  /**
+   * Delete a stored image — {@code DELETE /v1/assets/{fileName}}. Pass the URL {@link
+   * #upload} returned, or just its file name. Only this organisation's images are
+   * reachable: the folder comes from the API key, not from the name sent.
+   */
+  public void delete(String urlOrFileName) {
+    String name = urlOrFileName.substring(urlOrFileName.lastIndexOf('/') + 1);
+    client.requestVoid("DELETE", "/v1/assets/" + Query.pathSegment(name), null);
+  }
 }
