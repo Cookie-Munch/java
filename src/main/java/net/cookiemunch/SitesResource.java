@@ -176,4 +176,13 @@ public final class SitesResource {
   public Map<String, Object> createBulk(List<net.cookiemunch.model.BulkSite> sites) {
     return client.requestMap("POST", "/v1/sites/bulk", Map.of("sites", sites));
   }
+
+  /**
+   * Pages where the embed could not load its banner renderer — {@code GET
+   * /v1/sites/{cbid}/blocked}. The host page's Content Security Policy or Trusted Types
+   * policy refused it, so nobody there can be asked for consent. Empty is healthy.
+   */
+  public Map<String, Object> blocked(String cbid) {
+    return client.requestMap("GET", base(cbid) + "/blocked", null);
+  }
 }
