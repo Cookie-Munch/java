@@ -51,6 +51,19 @@ public final class CookieMunch {
   private final KeysResource keys;
   private final WebhooksResource webhooks;
   private final BannersResource banners;
+  private final IdentityResource identity;
+  private final VaultResource vault;
+  private final ProfileResource profile;
+  private final SubscriptionsResource subscriptions;
+  private final AssessmentsResource assessments;
+  private final DiscoveryResource discovery;
+  private final AiResource ai;
+  private final FulfillmentResource fulfillment;
+  private final RegulatoryResource regulatory;
+  private final ResellerResource reseller;
+  private final SubjectsResource subjects;
+  private final OrgResource org;
+  private final AssetsResource assets;
 
   /** Create a client for the default base URL, authenticating with {@code apiKey}. */
   public CookieMunch(String apiKey) {
@@ -77,6 +90,19 @@ public final class CookieMunch {
     this.keys = new KeysResource(this);
     this.webhooks = new WebhooksResource(this);
     this.banners = new BannersResource(this);
+    this.identity = new IdentityResource(this);
+    this.vault = new VaultResource(this);
+    this.profile = new ProfileResource(this);
+    this.subscriptions = new SubscriptionsResource(this);
+    this.assessments = new AssessmentsResource(this);
+    this.discovery = new DiscoveryResource(this);
+    this.ai = new AiResource(this);
+    this.fulfillment = new FulfillmentResource(this);
+    this.regulatory = new RegulatoryResource(this);
+    this.reseller = new ResellerResource(this);
+    this.subjects = new SubjectsResource(this);
+    this.org = new OrgResource(this);
+    this.assets = new AssetsResource(this);
   }
 
   /** Start building a client, overriding base URL, transport, or user agent. */
@@ -94,6 +120,15 @@ public final class CookieMunch {
   /** Current resource usage for the org — {@code GET /v1/usage}. */
   public Usage usage() {
     return get("/v1/usage", Usage.class);
+  }
+
+  /**
+   * The org's audit log, newest first — {@code GET /v1/audit}. API actions appear as
+   * {@code apikey:<prefix>}. Requires an unscoped key that is not property-locked.
+   * {@code limit} (1-500) may be null for the server default.
+   */
+  public Map<String, Object> audit(Integer limit) {
+    return getMap("/v1/audit" + new Query().add("limit", limit));
   }
 
   /**
@@ -152,6 +187,62 @@ public final class CookieMunch {
     return banners;
   }
 
+  // ---- the privacy platform, and the reseller API --------------------------
+  // Identity, vault and profile reads are POSTs so a person's identifiers never appear in a URL.
+
+  public IdentityResource identity() {
+    return identity;
+  }
+
+  public VaultResource vault() {
+    return vault;
+  }
+
+  public ProfileResource profile() {
+    return profile;
+  }
+
+  public SubscriptionsResource subscriptions() {
+    return subscriptions;
+  }
+
+  public AssessmentsResource assessments() {
+    return assessments;
+  }
+
+  public DiscoveryResource discovery() {
+    return discovery;
+  }
+
+  public AiResource ai() {
+    return ai;
+  }
+
+  public FulfillmentResource fulfillment() {
+    return fulfillment;
+  }
+
+  public RegulatoryResource regulatory() {
+    return regulatory;
+  }
+
+  public ResellerResource reseller() {
+    return reseller;
+  }
+
+  public SubjectsResource subjects() {
+    return subjects;
+  }
+
+  /** The key's organisation. Requires an unscoped key that is not property-locked. */
+  public OrgResource org() {
+    return org;
+  }
+
+  public AssetsResource assets() {
+    return assets;
+  }
+
   // ---- internal request plumbing (package-private; used by resource classes) --
 
   <T> T get(String path, Class<T> type) {
@@ -172,6 +263,11 @@ public final class CookieMunch {
 
   Map<String, Object> requestMap(String method, String path, Object body) {
     return json.readMap(exchange(method, path, body));
+  }
+
+  /** As {@link #requestMap}, but a null value in {@code body} is sent as JSON null. */
+  Map<String, Object> requestMapKeepingNulls(String method, String path, Map<String, Object> body) {
+    return json.readMap(exchange(method, path, json.keepingNulls(body)));
   }
 
   String requestRaw(String method, String path, Object body) {

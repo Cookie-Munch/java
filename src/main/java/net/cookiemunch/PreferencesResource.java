@@ -27,4 +27,12 @@ public final class PreferencesResource {
     Map<String, Object> body = Map.of("subjectId", subjectId, "purposes", purposes);
     return client.requestMap("POST", "/v1/preferences", body);
   }
+
+  /**
+   * One subject's preference record — {@code GET /v1/preferences/{subjectId}}. A subject with
+   * none has empty {@code purposes}. Requires consent:read.
+   */
+  public Map<String, Object> get(String subjectId) {
+    return client.getMap("/v1/preferences/" + Query.pathSegment(subjectId));
+  }
 }

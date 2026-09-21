@@ -143,4 +143,37 @@ public final class SitesResource {
     return client.request(
         "POST", base(cbid) + "/elements/ad-personalization", body, AdPersonalizationResult.class);
   }
+
+  /** Which banner design the site uses — {@code GET /v1/sites/{cbid}/banner}. {@code bannerId} is null when none is assigned. */
+  public Map<String, Object> banner(String cbid) {
+    return client.getMap(base(cbid) + "/banner");
+  }
+
+  /** The site's privacy and cookie policy, as Markdown — {@code GET /v1/sites/{cbid}/policy}. {@code opts} may be null. */
+  public String policy(String cbid, net.cookiemunch.model.PolicyOptions opts) {
+    Query q = new Query();
+    if (opts != null) {
+      q.add("contactEmail", opts.contactEmail()).add("effectiveDate", opts.effectiveDate());
+      if (opts.jurisdictions() != null) q.add("jurisdictions", String.join(",", opts.jurisdictions()));
+    }
+    return client.requestRaw("GET", base(cbid) + "/policy" + q, null);
+  }
+
+  /**
+   * Which trackers fired after opt-out in a captured session, and what personal data left
+   * the page — {@code POST /v1/sites/{cbid}/sentry}.
+   */
+  public Map<String, Object> analyzeSession(String cbid, net.cookiemunch.model.SessionAnalysisInput input) {
+    return client.requestMap("POST", base(cbid) + "/sentry", input);
+  }
+
+  /** Exactly what to publish to prove control of the domain, per method — {@code GET /v1/sites/{cbid}/verify/challenge}. */
+  public Map<String, Object> verifyChallenge(String cbid) {
+    return client.getMap(base(cbid) + "/verify/challenge");
+  }
+
+  /** Create up to 100 sites — {@code POST /v1/sites/bulk}. Partial success: each result reports {@code ok} or its own error. */
+  public Map<String, Object> createBulk(List<net.cookiemunch.model.BulkSite> sites) {
+    return client.requestMap("POST", "/v1/sites/bulk", Map.of("sites", sites));
+  }
 }

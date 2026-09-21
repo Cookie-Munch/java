@@ -117,18 +117,38 @@ client trivial to unit-test without a socket (see `src/test/java`).
 
 | Group | Methods |
 |---|---|
-| top-level | `me()`, `usage()`, `logConsent(ConsentIngest)` |
-| `sites()` | `list`, `create`, `get`, `delete`, `getConfig`, `putConfig`, `cookies`, `scan`, `scanStatus`, `ab`, `snippet`, `verify`, `brand`, `getFlow`, `editFlow`, `setFlow`, `enableAdPersonalization` |
+| top-level | `me()`, `usage()`, `audit(Integer limit)`, `logConsent(ConsentIngest)` |
+| `sites()` | `list`, `create`, `get`, `delete`, `getConfig`, `putConfig`, `cookies`, `scan`, `scanStatus`, `ab`, `snippet`, `verify`, `brand`, `getFlow`, `editFlow`, `setFlow`, `enableAdPersonalization`, `banner`, `policy` (Markdown `String`), `analyzeSession` |
 | `consent()` | `stats`, `log`, `export`, `receipt`, `eraseSubject`, `exportSubject` |
-| `dsar()` | `list`, `create`, `advance` |
+| `dsar()` | `list`, `create`, `advance`, `response` (plain-text notice), `erase`, `export` |
 | `vendors()` | `list`, `create` |
-| `ropa()` | `list`, `create` |
+| `ropa()` | `list`, `create`, `exportCsv` |
 | `brandKits()` | `list`, `create`, `delete` |
-| `preferences()` | `list`, `save` |
+| `preferences()` | `list`, `save`, `get` |
 | `members()` | `list`, `invite`, `setRole`, `remove` |
-| `keys()` | `list`, `issue` |
-| `webhooks()` | `list`, `create`, `delete` |
+| `keys()` | `list`, `issue` — `new ApiKeyIssueInput(name, scopes, cbids, expiresInDays)` for a least-privilege key —, `revoke`, `roll`, `update` |
+| `webhooks()` | `list`, `create`, `delete`, `update`, `rollSecret`, `test`, `deadLetters`, `replayDeadLetter` |
 | `banners()` | `list`, `create`, `get`, `update`, `delete`, `assignments`, `setAssignments`, `publish` |
+| `org()` | `get`, `update` — requires an unscoped key that is not property-locked |
+| `assets()` | `upload` — requires `sites:write` |
+| `identity()` | `resolve`, `link`, `cluster` |
+| `vault()` | `record`, `current`, `permits` |
+| `profile()` | `get`, `setAttributes`, `activate` |
+| `subscriptions()` | `topics`, `setTopics`, `get`, `set`, `unsubscribeAll`, `resubscribe`, `activation` |
+| `assessments()` | `templates`, `list`, `start`, `get`, `answer`, `autoPopulateFromMap`, `autoPopulate`, `submit`, `approve`, `reject` |
+| `discovery()` | `ingestMap`, `getMap`, `ropaDrafts`, `evidence`, `drift`, `planEnforcement` |
+| `ai()` | `getPolicy`, `setPolicy`, `inspect`, `inventory`, `lineage`, `registerSystem`, `systems`, `audit` |
+| `fulfillment()` | `sla`, `plan`, `status`, and for the in-environment agent `pendingTasks`, `reportTask` |
+| `regulatory()` | `feed`, `upcoming` |
+| `reseller()` | `list`, `create`, `get`, `update`, `deprovision` (suspends; `purge=true` deletes irreversibly), `listKeys`, `mintKey`, `revokeKey` — needs the `reseller:*` scopes |
+
+Every operation of the `/v1` API is reachable; `ParityTest` keeps it that way against
+`sdks/operations.json`, generated from the server's OpenAPI document. Identity, vault and
+profile reads are `POST`s so a person's identifiers never appear in a URL.
+
+The client's JSON encoding omits `null` fields, which is right for optional record fields.
+Where `null` means something — `reseller().update(id, Map.of(...))` with a `"dsarRouting"`
+entry mapped to `null` clears that override — the call keeps it.
 
 Where the published TypeScript SDK's aspirational types disagreed with the server's
 OpenAPI schema (`packages/server/src/openapi-schemas.ts`), the wire shape wins so these

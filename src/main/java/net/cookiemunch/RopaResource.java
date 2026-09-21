@@ -23,4 +23,9 @@ public final class RopaResource {
   public RopaEntry create(RopaInput input) {
     return client.request("POST", "/v1/ropa", input, RopaEnvelope.class).entry();
   }
+
+  /** The org's RoPA (GDPR Art. 30), as CSV — {@code GET /v1/ropa/export.csv}. */
+  public String exportCsv() {
+    return client.requestRaw("GET", "/v1/ropa/export.csv", null);
+  }
 }

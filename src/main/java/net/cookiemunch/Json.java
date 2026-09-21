@@ -25,12 +25,32 @@ final class Json {
   }
 
   String write(Object value) {
+    if (value instanceof Verbatim v) {
+      return v.json();
+    }
     try {
       return mapper.writeValueAsString(value);
     } catch (JsonProcessingException e) {
       throw new CookieMunchException("cookiemunch: failed to encode request body", e);
     }
   }
+
+  /**
+   * Encode a map keeping its null values. The shared mapper drops nulls everywhere —
+   * right for optional record fields, wrong where null MEANS something, as in a PATCH that
+   * clears a field. Without this, a Java caller could not clear a child org's DSAR routing
+   * override at all: the null was silently removed and the request left it in place.
+   */
+  Verbatim keepingNulls(Map<String, Object> value) {
+    try {
+      return new Verbatim(mapper.copy().setSerializationInclusion(JsonInclude.Include.ALWAYS).writeValueAsString(value));
+    } catch (JsonProcessingException e) {
+      throw new CookieMunchException("cookiemunch: failed to encode request body", e);
+    }
+  }
+
+  /** A body that is already JSON, sent exactly as-is. */
+  record Verbatim(String json) {}
 
   <T> T read(String body, Class<T> type) {
     try {

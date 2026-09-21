@@ -21,22 +21,6 @@
     </license>
   </licenses>
 
-  <!-- Repository (also required by Maven Central). -->
-  <scm>
-    <connection>scm:git:https://github.com/Cookie-Munch/java.git</connection>
-    <developerConnection>scm:git:git@github.com:Cookie-Munch/java.git</developerConnection>
-    <url>https://github.com/Cookie-Munch/java</url>
-  </scm>
-
-  <!-- Required by Maven Central. -->
-  <developers>
-    <developer>
-      <name>Cookie Munch</name>
-      <organization>Cookie Munch</organization>
-      <organizationUrl>https://cookiemunch.net</organizationUrl>
-    </developer>
-  </developers>
-
   <properties>
     <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
