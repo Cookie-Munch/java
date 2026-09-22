@@ -35,18 +35,20 @@ public final class FulfillmentResource {
   }
 
   /**
-   * Connect one. The secret is stored encrypted and never returned; the response carries the
-   * webhook URL to configure in that system. {@code webhookSecret}, {@code system} and
+   * Connect one. {@code profile} describes that system's API — paths, the words it uses for
+   * export and erase, its status vocabulary, how it signs webhooks — so connecting a new
+   * platform needs no code. The secret is stored encrypted and never returned; the response
+   * carries the webhook URL to configure in that system. {@code webhookSecret} and
    * {@code auto} may be null.
    */
   public Map<String, Object> connectExecutor(
-      String kind, String baseUrl, String secretKey, String webhookSecret, String system, Boolean auto) {
+      String system, String baseUrl, String secretKey, Map<String, Object> profile, String webhookSecret, Boolean auto) {
     Map<String, Object> body = new LinkedHashMap<>();
-    body.put("kind", kind);
+    body.put("system", system);
     body.put("baseUrl", baseUrl);
     body.put("secretKey", secretKey);
+    body.put("profile", profile);
     if (webhookSecret != null) body.put("webhookSecret", webhookSecret);
-    if (system != null) body.put("system", system);
     if (auto != null) body.put("auto", auto);
     return client.requestMap("POST", "/v1/dsar/executors", body);
   }
