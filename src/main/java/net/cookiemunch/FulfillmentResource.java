@@ -29,6 +29,39 @@ public final class FulfillmentResource {
     return client.getMap("/v1/dsar/" + Query.pathSegment(requestId) + "/fulfillment");
   }
 
+  /** Systems connected to run part of a request themselves. Never includes credentials. */
+  public List<Map<String, Object>> executors() {
+    return client.getListOfMaps("/v1/dsar/executors");
+  }
+
+  /**
+   * Connect one. The secret is stored encrypted and never returned; the response carries the
+   * webhook URL to configure in that system. {@code webhookSecret}, {@code system} and
+   * {@code auto} may be null.
+   */
+  public Map<String, Object> connectExecutor(
+      String kind, String baseUrl, String secretKey, String webhookSecret, String system, Boolean auto) {
+    Map<String, Object> body = new LinkedHashMap<>();
+    body.put("kind", kind);
+    body.put("baseUrl", baseUrl);
+    body.put("secretKey", secretKey);
+    if (webhookSecret != null) body.put("webhookSecret", webhookSecret);
+    if (system != null) body.put("system", system);
+    if (auto != null) body.put("auto", auto);
+    return client.requestMap("POST", "/v1/dsar/executors", body);
+  }
+
+  /** Disconnect a system; its open sub-tasks stop being driven. */
+  public void disconnectExecutor(String id) {
+    client.requestVoid("DELETE", "/v1/dsar/executors/" + Query.pathSegment(id), null);
+  }
+
+  /** The export bundle a connected system produced, fetched from it on demand. */
+  public Map<String, Object> taskExport(String requestId, String taskId) {
+    return client.getMap(
+        "/v1/dsar/" + Query.pathSegment(requestId) + "/tasks/" + Query.pathSegment(taskId) + "/export");
+  }
+
   /** For the in-environment agent: tasks to execute inside your network. {@code limit} may be null. */
   public Map<String, Object> pendingTasks(Integer limit) {
     return client.getMap("/v1/dsar/agent/tasks" + new Query().add("limit", limit));

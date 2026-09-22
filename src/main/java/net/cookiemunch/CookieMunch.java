@@ -266,6 +266,11 @@ public final class CookieMunch {
     return json.readMap(exchange("GET", path, null));
   }
 
+  /** A bare JSON array of objects, for endpoints with no dedicated model. */
+  List<Map<String, Object>> getListOfMaps(String path) {
+    return json.readListOfMaps(exchange("GET", path, null));
+  }
+
   <T> T request(String method, String path, Object body, Class<T> type) {
     return json.read(exchange(method, path, body), type);
   }

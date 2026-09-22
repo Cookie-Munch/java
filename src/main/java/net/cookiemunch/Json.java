@@ -68,6 +68,18 @@ final class Json {
     }
   }
 
+  List<Map<String, Object>> readListOfMaps(String body) {
+    try {
+      return mapper.readValue(
+          body,
+          mapper.getTypeFactory().constructCollectionType(
+              List.class,
+              mapper.getTypeFactory().constructMapType(Map.class, String.class, Object.class)));
+    } catch (JsonProcessingException e) {
+      throw new CookieMunchException("cookiemunch: failed to decode response", e);
+    }
+  }
+
   Map<String, Object> readMap(String body) {
     try {
       return mapper.readValue(
