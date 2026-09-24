@@ -65,6 +65,14 @@ public final class SitesResource {
     return client.requestMap("PUT", base(cbid) + "/config", config);
   }
 
+  /**
+   * Change part of a site's config — {@code PATCH /v1/sites/{cbid}/config}. Omitted fields
+   * keep their stored value; {@link #putConfig} replaces the whole document.
+   */
+  public Map<String, Object> patchConfig(String cbid, Map<String, Object> config) {
+    return client.requestMap("PATCH", base(cbid) + "/config", config);
+  }
+
   /** Latest categorized cookie declaration — {@code GET /v1/sites/{cbid}/cookies}. */
   public CookieDeclaration cookies(String cbid) {
     return client.get(base(cbid) + "/cookies", CookieDeclaration.class);
