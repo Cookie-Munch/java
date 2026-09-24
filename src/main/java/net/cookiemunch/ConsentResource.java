@@ -25,6 +25,16 @@ public final class ConsentResource {
     return "/v1/sites/" + Query.pathSegment(cbid);
   }
 
+  /**
+   * Verify the consent log's tamper-evident hash chain —
+   * {@code GET /v1/sites/{cbid}/consent/verify}. Each record carries the hash of the one
+   * before it, so an edited, reordered or removed record answers false.
+   */
+  public boolean verify(String cbid) {
+    Object valid = client.requestMap("GET", base(cbid) + "/consent/verify", null).get("valid");
+    return Boolean.TRUE.equals(valid);
+  }
+
   /** Aggregated per-day consent stats — {@code GET /v1/sites/{cbid}/consent/stats}. */
   public List<ConsentDay> stats(String cbid) {
     return stats(cbid, null, null);
