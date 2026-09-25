@@ -119,6 +119,17 @@ public final class CookieMunch {
   }
 
   /**
+   * Create a sibling organisation owned by the same account — {@code POST /v1/orgs}.
+   *
+   * <p>For starting a separate business of your own. Needs an unscoped key and counts against
+   * the account's plan org allowance (403 {@code org_limit} names the plan). Not reseller
+   * provisioning, which is for organisations you run on behalf of YOUR customers.
+   */
+  public Map<String, Object> createOrg(String name) {
+    return requestMap("POST", "/v1/orgs", Map.of("name", name));
+  }
+
+  /**
    * The languages the banner already has copy for — {@code GET /v1/languages}. Diff it
    * against your visitors' locales to find the ones you still have to write.
    */
