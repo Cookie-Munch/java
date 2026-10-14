@@ -14,4 +14,6 @@ public record DsarRequest(
     String status,
     long createdAt,
     long dueAt,
-    String note) {}
+    String note,
+    /** True for a test request; null otherwise. */
+    Boolean test) {}

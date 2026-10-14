@@ -119,6 +119,17 @@ public final class CookieMunch {
   }
 
   /**
+   * Every organisation on this key's account — {@code GET /v1/orgs} — each with its effective
+   * {@code plan}, {@code planSource} ({@code org} = its own subscription, {@code account} =
+   * covered by a higher plan another org on the account pays for) and {@code subscribedPlan},
+   * plus {@code orgLimit} and {@code upgradeUrl}. Needs an unscoped key that is not locked to
+   * properties.
+   */
+  public Map<String, Object> listOrgs() {
+    return requestMap("GET", "/v1/orgs", null);
+  }
+
+  /**
    * Create a sibling organisation owned by the same account — {@code POST /v1/orgs}.
    *
    * <p>For starting a separate business of your own. Needs an unscoped key and counts against

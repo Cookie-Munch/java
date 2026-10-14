@@ -22,6 +22,19 @@ public final class DsarResource {
     return client.getList("/v1/dsar", DsarRequest.class);
   }
 
+  /** One request, in the shape {@code list} returns — {@code GET /v1/dsar/{id}}. */
+  public DsarRequest get(String id) {
+    return client.request("GET", "/v1/dsar/" + Query.pathSegment(id), null, DsarRequest.class);
+  }
+
+  /**
+   * Delete a TEST request with its tasks and log — {@code DELETE /v1/dsar/{id}}. A real request
+   * is refused with 409 {@code not_a_test_request}; the deletion is audited.
+   */
+  public void delete(String id) {
+    client.requestVoid("DELETE", "/v1/dsar/" + Query.pathSegment(id), null);
+  }
+
   /** File a new DSAR — {@code POST /v1/dsar}. */
   public DsarRequest create(DsarCreate input) {
     return client.request("POST", "/v1/dsar", input, DsarEnvelope.class).request();

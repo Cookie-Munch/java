@@ -73,6 +73,15 @@ public final class SitesResource {
     return client.requestMap("PATCH", base(cbid) + "/config", config);
   }
 
+  /**
+   * Preview a config write without saving it — {@code PATCH} (or, with {@code replace}, {@code PUT})
+   * {@code /v1/sites/{cbid}/config?dryRun=1}. Returns {@code config} (as it would be saved),
+   * {@code diff} (every leaf that would change) and any {@code warnings}.
+   */
+  public Map<String, Object> dryRunConfig(String cbid, Map<String, Object> config, boolean replace) {
+    return client.requestMap(replace ? "PUT" : "PATCH", base(cbid) + "/config?dryRun=1", config);
+  }
+
   /** Latest categorized cookie declaration — {@code GET /v1/sites/{cbid}/cookies}. */
   public CookieDeclaration cookies(String cbid) {
     return client.get(base(cbid) + "/cookies", CookieDeclaration.class);
@@ -110,6 +119,21 @@ public final class SitesResource {
   /** Verify the site's domain — {@code POST /v1/sites/{cbid}/verify}. {@code method} is dns|meta|file. */
   public VerifyResult verify(String cbid, String method) {
     return client.request("POST", base(cbid) + "/verify", Map.of("method", method), VerifyResult.class);
+  }
+
+  /**
+   * Mint a short-lived signed token to preview the banner as a visitor in {@code region}
+   * speaking {@code lang} sees it (headless browsers included; nothing is recorded) —
+   * {@code POST /v1/sites/{cbid}/preview-token}. Any argument may be null. The result carries
+   * {@code token}, {@code expiresAt} and {@code previewUrl}.
+   */
+  public Map<String, Object> previewToken(String cbid, String region, String lang, String url, Integer ttlSeconds) {
+    Map<String, Object> body = new java.util.LinkedHashMap<>();
+    if (region != null) body.put("region", region);
+    if (lang != null) body.put("lang", lang);
+    if (url != null) body.put("url", url);
+    if (ttlSeconds != null) body.put("ttlSeconds", ttlSeconds);
+    return client.requestMap("POST", base(cbid) + "/preview-token", body);
   }
 
   /** Suggest theme tokens from the site's homepage — {@code POST /v1/sites/{cbid}/brand}. */
