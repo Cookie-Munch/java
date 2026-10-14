@@ -35,6 +35,16 @@ public final class DsarResource {
     client.requestVoid("DELETE", "/v1/dsar/" + Query.pathSegment(id), null);
   }
 
+  /**
+   * Mark a CLOSED request (completed or rejected) as a test, after the fact —
+   * {@code POST /v1/dsar/{id}/mark-test}. An open one is refused with 409
+   * {@code request_not_closed}. Audited; {@link #delete} then works on it.
+   * Returns {@code { request, changed }}.
+   */
+  public Map<String, Object> markTest(String id) {
+    return client.requestMap("POST", "/v1/dsar/" + Query.pathSegment(id) + "/mark-test", null);
+  }
+
   /** File a new DSAR — {@code POST /v1/dsar}. */
   public DsarRequest create(DsarCreate input) {
     return client.request("POST", "/v1/dsar", input, DsarEnvelope.class).request();

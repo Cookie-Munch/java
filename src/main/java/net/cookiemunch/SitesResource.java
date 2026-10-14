@@ -60,17 +60,30 @@ public final class SitesResource {
     return client.getMap(base(cbid) + "/config");
   }
 
-  /** Upsert a site's config (merged over the stored config) — {@code PUT /v1/sites/{cbid}/config}. */
+  /**
+   * Replace a site's config — {@code PUT /v1/sites/{cbid}/config}. A top-level field the config
+   * omits reverts to its default; a top-level field sent as null reverts to its default too.
+   */
   public Map<String, Object> putConfig(String cbid, Map<String, Object> config) {
-    return client.requestMap("PUT", base(cbid) + "/config", config);
+    return putConfig(cbid, config, false);
   }
 
   /**
-   * Change part of a site's config — {@code PATCH /v1/sites/{cbid}/config}. Omitted fields
-   * keep their stored value; {@link #putConfig} replaces the whole document.
+   * As {@link #putConfig(String, Map)}; with {@code keepUnspecified}
+   * ({@code ?keep=unspecified}) a top-level field the config omits keeps its stored value.
+   */
+  public Map<String, Object> putConfig(String cbid, Map<String, Object> config, boolean keepUnspecified) {
+    return client.requestMapKeepingNulls(
+        "PUT", base(cbid) + "/config" + (keepUnspecified ? "?keep=unspecified" : ""), new java.util.LinkedHashMap<>(config));
+  }
+
+  /**
+   * Change part of a site's config — {@code PATCH /v1/sites/{cbid}/config}, a JSON Merge Patch
+   * (RFC 7386): omitted fields keep their stored value, and a field set to null is removed (it
+   * takes its default). Nulls are sent as JSON null. {@link #putConfig} replaces the whole document.
    */
   public Map<String, Object> patchConfig(String cbid, Map<String, Object> config) {
-    return client.requestMap("PATCH", base(cbid) + "/config", config);
+    return client.requestMapKeepingNulls("PATCH", base(cbid) + "/config", new java.util.LinkedHashMap<>(config));
   }
 
   /**
@@ -79,7 +92,14 @@ public final class SitesResource {
    * {@code diff} (every leaf that would change) and any {@code warnings}.
    */
   public Map<String, Object> dryRunConfig(String cbid, Map<String, Object> config, boolean replace) {
-    return client.requestMap(replace ? "PUT" : "PATCH", base(cbid) + "/config?dryRun=1", config);
+    return dryRunConfig(cbid, config, replace, false);
+  }
+
+  /** As {@link #dryRunConfig(String, Map, boolean)}; {@code keepUnspecified} (with replace) adds {@code &keep=unspecified}. */
+  public Map<String, Object> dryRunConfig(String cbid, Map<String, Object> config, boolean replace, boolean keepUnspecified) {
+    String keep = replace && keepUnspecified ? "&keep=unspecified" : "";
+    return client.requestMapKeepingNulls(
+        replace ? "PUT" : "PATCH", base(cbid) + "/config?dryRun=1" + keep, new java.util.LinkedHashMap<>(config));
   }
 
   /** Latest categorized cookie declaration — {@code GET /v1/sites/{cbid}/cookies}. */
@@ -225,5 +245,52 @@ public final class SitesResource {
    */
   public Map<String, Object> importDeclaration(String cbid, String data) {
     return client.requestMap("POST", base(cbid) + "/import", Map.of("data", data));
+  }
+
+  /**
+   * Import a declaration exported from another CMP AND declare it — {@code POST
+   * /v1/sites/{cbid}/import?apply=1}. Every row whose category mapped to ours and that has
+   * a purpose is declared; the rest come back in {@code skipped}. Cookies the site already
+   * declared are kept unless {@code overwrite}.
+   */
+  public Map<String, Object> applyImport(String cbid, String data, boolean overwrite) {
+    String query = "?apply=1" + (overwrite ? "&overwrite=1" : "");
+    return client.requestMap("POST", base(cbid) + "/import" + query, Map.of("data", data));
+  }
+
+  /**
+   * Declare what one cookie is — {@code PUT /v1/sites/{cbid}/cookies/{name}}. Overrides
+   * scanned, observed and database classification everywhere (API, preference modal,
+   * {@code data-cc="declaration"}). A name ending in {@code *} declares a prefix wildcard.
+   *
+   * @param declaration {@code category} (a standard category or a custom category id) and
+   *     {@code purpose} are required; {@code provider}, {@code expiry}, {@code domain},
+   *     {@code pattern} are optional.
+   * @return {@code { cookie, warnings? }}
+   */
+  public Map<String, Object> declareCookie(String cbid, String name, Map<String, Object> declaration) {
+    return client.requestMap("PUT", base(cbid) + "/cookies/" + Query.pathSegment(name), declaration);
+  }
+
+  /**
+   * Declare many cookies at once — {@code PUT /v1/sites/{cbid}/cookies}. Each entry carries
+   * {@code name} plus the fields of {@link #declareCookie}. All-or-nothing; {@code replace}
+   * also removes declarations the list does not name.
+   *
+   * @return {@code { declared, saved, removed, warnings? }}
+   */
+  public Map<String, Object> declareCookies(String cbid, List<Map<String, Object>> cookies, boolean replace) {
+    Map<String, Object> body = new java.util.LinkedHashMap<>();
+    body.put("cookies", cookies);
+    if (replace) body.put("replace", true);
+    return client.requestMap("PUT", base(cbid) + "/cookies", body);
+  }
+
+  /**
+   * Remove a declaration — {@code DELETE /v1/sites/{cbid}/cookies/{name}}. The scanned
+   * classification applies again.
+   */
+  public void undeclareCookie(String cbid, String name) {
+    client.requestVoid("DELETE", base(cbid) + "/cookies/" + Query.pathSegment(name), null);
   }
 }
