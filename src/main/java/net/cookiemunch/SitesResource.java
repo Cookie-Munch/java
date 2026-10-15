@@ -281,12 +281,21 @@ public final class SitesResource {
    * {@code data-cc="declaration"}). A name ending in {@code *} declares a prefix wildcard.
    *
    * @param declaration {@code category} (a standard category or a custom category id) and
-   *     {@code purpose} are required; {@code provider}, {@code expiry}, {@code domain},
-   *     {@code pattern} are optional.
+   *     {@code purpose} are required; {@code purposes} (the purpose in other languages, a map
+   *     of BCP-47 tag to text, e.g. {@code {"es": "…"}}; {@code purpose} is the fallback),
+   *     {@code provider}, {@code expiry}, {@code domain}, {@code pattern} are optional.
    * @return {@code { cookie, warnings? }}
    */
   public Map<String, Object> declareCookie(String cbid, String name, Map<String, Object> declaration) {
-    return client.requestMap("PUT", base(cbid) + "/cookies/" + Query.pathSegment(name), declaration);
+    return declareCookie(cbid, name, declaration, false);
+  }
+
+  /**
+   * {@link #declareCookie(String, String, Map)}; with {@code dryRun} nothing is stored and the
+   * answer adds {@code dryRun}, {@code declared} (the would-be list) and a {@code diff}.
+   */
+  public Map<String, Object> declareCookie(String cbid, String name, Map<String, Object> declaration, boolean dryRun) {
+    return client.requestMap("PUT", base(cbid) + "/cookies/" + Query.pathSegment(name) + (dryRun ? "?dryRun=1" : ""), declaration);
   }
 
   /**
@@ -297,10 +306,18 @@ public final class SitesResource {
    * @return {@code { declared, saved, removed, warnings? }}
    */
   public Map<String, Object> declareCookies(String cbid, List<Map<String, Object>> cookies, boolean replace) {
+    return declareCookies(cbid, cookies, replace, false);
+  }
+
+  /**
+   * {@link #declareCookies(String, List, boolean)}; with {@code dryRun} nothing is stored and
+   * the answer says what would be, plus a {@code diff}.
+   */
+  public Map<String, Object> declareCookies(String cbid, List<Map<String, Object>> cookies, boolean replace, boolean dryRun) {
     Map<String, Object> body = new java.util.LinkedHashMap<>();
     body.put("cookies", cookies);
     if (replace) body.put("replace", true);
-    return client.requestMap("PUT", base(cbid) + "/cookies", body);
+    return client.requestMap("PUT", base(cbid) + "/cookies" + (dryRun ? "?dryRun=1" : ""), body);
   }
 
   /**
@@ -309,5 +326,18 @@ public final class SitesResource {
    */
   public void undeclareCookie(String cbid, String name) {
     client.requestVoid("DELETE", base(cbid) + "/cookies/" + Query.pathSegment(name), null);
+  }
+
+  /**
+   * What removing a declaration would leave — {@code declared} and a {@code diff} — with
+   * nothing removed ({@code DELETE …?dryRun=1}). {@code dryRun} false removes it and
+   * returns an empty map.
+   */
+  public Map<String, Object> undeclareCookie(String cbid, String name, boolean dryRun) {
+    if (!dryRun) {
+      undeclareCookie(cbid, name);
+      return Map.of();
+    }
+    return client.requestMap("DELETE", base(cbid) + "/cookies/" + Query.pathSegment(name) + "?dryRun=1", null);
   }
 }

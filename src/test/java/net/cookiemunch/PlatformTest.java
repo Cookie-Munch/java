@@ -36,6 +36,30 @@ class PlatformTest {
     return r.body() == null ? null : new ObjectMapper().readValue(r.body(), Map.class);
   }
 
+  /** Numestri F-01: per-language purposes, and dryRun on every declaration write. */
+  @Test
+  void declaredCookiesPurposesAndDryRun() throws Exception {
+    CookieMunch c = client(200, "{\"dryRun\":true,\"declared\":[],\"diff\":{\"added\":[],\"removed\":[],\"changed\":[]}}");
+    Map<String, Object> decl = new HashMap<>();
+    decl.put("category", "necessary");
+    decl.put("purpose", "Signed in.");
+    decl.put("purposes", Map.of("es", "Sesión."));
+    c.sites().declareCookie("cb", "sid", decl);
+    c.sites().declareCookie("cb", "sid", decl, true);
+    c.sites().declareCookies("cb", List.of(Map.of("name", "a", "category", "necessary", "purpose", "A")), true, true);
+    Map<String, Object> out = c.sites().undeclareCookie("cb", "sid", true);
+    List<String> seen = new ArrayList<>();
+    for (HttpTransport.Request r : calls) seen.add(r.method() + " " + r.url());
+    assertEquals(List.of(
+        "PUT https://api.example.test/v1/sites/cb/cookies/sid",
+        "PUT https://api.example.test/v1/sites/cb/cookies/sid?dryRun=1",
+        "PUT https://api.example.test/v1/sites/cb/cookies?dryRun=1",
+        "DELETE https://api.example.test/v1/sites/cb/cookies/sid?dryRun=1"), seen);
+    assertEquals(Map.of("es", "Sesión."), body(calls.get(0)).get("purposes"));
+    assertEquals(true, body(calls.get(2)).get("replace"));
+    assertEquals(true, out.get("dryRun"));
+  }
+
   @Test
   void orgMailProvider() throws Exception {
     CookieMunch c = client(200, "{}");
@@ -208,5 +232,26 @@ class PlatformTest {
     assertEquals(Map.of("hostname", "privacy.acme.com"), body(calls.get(1)));
     assertEquals(base + "/s/rights-page/domains/privacy.acme.com/verify", calls.get(2).url());
     assertEquals(base + "/s/rights-page/domains/privacy.acme.com", calls.get(3).url());
+  }
+
+  @Test
+  void executorWebhookCheckDeliveriesAndDryRuns() throws Exception {
+    CookieMunch c = client(200, "{}");
+    c.fulfillment().testExecutorWebhook("ex 1", Map.of("x-sig", "v1,abc"), "{\"a\":1}");
+    c.fulfillment().dryRunConnectExecutor("crm", "https://crm.example", "sk_12345678", Map.of(), null, null);
+    c.fulfillment().dryRunUpdateExecutor("ex 1", Map.of("auto", false));
+    c.fulfillment().updateExecutor("ex 1", Map.of("auto", false));
+    List<String> seen = new ArrayList<>();
+    for (HttpTransport.Request r : calls) seen.add(r.method() + " " + r.url());
+    assertEquals(List.of(
+        "POST https://api.example.test/v1/dsar/executors/ex%201/webhook/test",
+        "POST https://api.example.test/v1/dsar/executors?dryRun=1",
+        "PATCH https://api.example.test/v1/dsar/executors/ex%201?dryRun=1",
+        "PATCH https://api.example.test/v1/dsar/executors/ex%201"), seen);
+    assertEquals(Map.of("headers", Map.of("x-sig", "v1,abc"), "body", "{\"a\":1}"), body(calls.get(0)));
+
+    CookieMunch list = client(200, "[]");
+    list.fulfillment().executorWebhookDeliveries("ex 1");
+    assertEquals("GET https://api.example.test/v1/dsar/executors/ex%201/webhook/deliveries", calls.get(0).method() + " " + calls.get(0).url());
   }
 }

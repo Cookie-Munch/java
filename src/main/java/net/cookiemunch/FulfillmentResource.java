@@ -39,9 +39,25 @@ public final class FulfillmentResource {
    * export and erase, its status vocabulary, how it signs webhooks — so connecting a new
    * platform needs no code. The secret is stored encrypted and never returned; the response
    * carries the webhook URL to configure in that system. {@code webhookSecret} and
-   * {@code auto} may be null.
+   * {@code auto} may be null. A {@code whsec_<base64>} webhook secret verifies deliveries signed
+   * with its base64-decoded bytes or with the literal string; any other secret only with its
+   * UTF-8 bytes.
    */
   public Map<String, Object> connectExecutor(
+      String system, String baseUrl, String secretKey, Map<String, Object> profile, String webhookSecret, Boolean auto) {
+    return client.requestMap("POST", "/v1/dsar/executors", executorBody(system, baseUrl, secretKey, profile, webhookSecret, auto));
+  }
+
+  /**
+   * What {@link #connectExecutor} would create, validated in full, with nothing stored —
+   * {@code POST /v1/dsar/executors?dryRun=1}. Returns {@code dryRun}, {@code executor}, {@code diff}.
+   */
+  public Map<String, Object> dryRunConnectExecutor(
+      String system, String baseUrl, String secretKey, Map<String, Object> profile, String webhookSecret, Boolean auto) {
+    return client.requestMap("POST", "/v1/dsar/executors?dryRun=1", executorBody(system, baseUrl, secretKey, profile, webhookSecret, auto));
+  }
+
+  private static Map<String, Object> executorBody(
       String system, String baseUrl, String secretKey, Map<String, Object> profile, String webhookSecret, Boolean auto) {
     Map<String, Object> body = new LinkedHashMap<>();
     body.put("system", system);
@@ -50,7 +66,7 @@ public final class FulfillmentResource {
     body.put("profile", profile);
     if (webhookSecret != null) body.put("webhookSecret", webhookSecret);
     if (auto != null) body.put("auto", auto);
-    return client.requestMap("POST", "/v1/dsar/executors", body);
+    return body;
   }
 
   /**
@@ -60,6 +76,35 @@ public final class FulfillmentResource {
    */
   public Map<String, Object> updateExecutor(String id, Map<String, Object> patch) {
     return client.requestMapKeepingNulls("PATCH", "/v1/dsar/executors/" + Query.pathSegment(id), new LinkedHashMap<>(patch));
+  }
+
+  /**
+   * The connection as {@link #updateExecutor} would leave it, and a diff, changing nothing —
+   * {@code PATCH /v1/dsar/executors/{id}?dryRun=1}.
+   */
+  public Map<String, Object> dryRunUpdateExecutor(String id, Map<String, Object> patch) {
+    return client.requestMapKeepingNulls(
+        "PATCH", "/v1/dsar/executors/" + Query.pathSegment(id) + "?dryRun=1", new LinkedHashMap<>(patch));
+  }
+
+  /**
+   * Would this webhook delivery verify? — {@code POST /v1/dsar/executors/{id}/webhook/test}.
+   * Runs the receiver's exact check on {@code headers} and the raw {@code body} string (the
+   * bytes that were signed) and acts on nothing. Returns {@code verified}, {@code stage}, {@code reason}.
+   */
+  public Map<String, Object> testExecutorWebhook(String id, Map<String, String> headers, String body) {
+    Map<String, Object> payload = new LinkedHashMap<>();
+    payload.put("headers", headers == null ? Map.of() : headers);
+    payload.put("body", body);
+    return client.requestMap("POST", "/v1/dsar/executors/" + Query.pathSegment(id) + "/webhook/test", payload);
+  }
+
+  /**
+   * The last 50 deliveries to a connection's webhook, newest first, each with its reason —
+   * {@code GET /v1/dsar/executors/{id}/webhook/deliveries}.
+   */
+  public List<Map<String, Object>> executorWebhookDeliveries(String id) {
+    return client.getListOfMaps("/v1/dsar/executors/" + Query.pathSegment(id) + "/webhook/deliveries");
   }
 
   /**
