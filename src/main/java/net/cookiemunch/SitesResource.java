@@ -102,6 +102,23 @@ public final class SitesResource {
         replace ? "PUT" : "PATCH", base(cbid) + "/config?dryRun=1" + keep, new java.util.LinkedHashMap<>(config));
   }
 
+  /**
+   * Check a proposed config for consent-button parity without saving it — {@code POST
+   * /v1/sites/{cbid}/config/lint}: is "Accept all" more prominent than "Reject all" anywhere
+   * (colour, size, placement, copy, custom CSS)? Returns {@code designWarnings}, {@code score}
+   * (0-100) and {@code suggestedReject}. It checks exactly what {@code patchConfig} would
+   * store (a null removes a field, as in PATCH). Needs only {@code sites:read}.
+   */
+  public Map<String, Object> lintConfig(String cbid, Map<String, Object> config) {
+    return lintConfig(cbid, config, false);
+  }
+
+  /** As {@link #lintConfig(String, Map)}; {@code replace} checks what {@code putConfig} would store instead ({@code ?replace=1}). */
+  public Map<String, Object> lintConfig(String cbid, Map<String, Object> config, boolean replace) {
+    return client.requestMapKeepingNulls(
+        "POST", base(cbid) + "/config/lint" + (replace ? "?replace=1" : ""), new java.util.LinkedHashMap<>(config));
+  }
+
   /** Latest categorized cookie declaration — {@code GET /v1/sites/{cbid}/cookies}. */
   public CookieDeclaration cookies(String cbid) {
     return client.get(base(cbid) + "/cookies", CookieDeclaration.class);

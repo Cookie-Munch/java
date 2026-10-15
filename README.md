@@ -58,9 +58,8 @@ import java.util.List;
 // The org is derived server-side from the key — you never pass an orgId.
 CookieMunch cm = new CookieMunch("fck_live_...");
 
-// ...or configure the base URL / transport via the builder:
+// ...or configure the transport via the builder (the API origin defaults to https://api.cookiemunch.net):
 CookieMunch cm2 = CookieMunch.builder("fck_live_...")
-    .baseUrl("https://cmp.example.com") // default: https://api.cookiemunch.net
     .build();
 
 // Every request sends both `Authorization: Bearer <key>` and `X-API-Key: <key>`.
@@ -118,18 +117,22 @@ client trivial to unit-test without a socket (see `src/test/java`).
 | Group | Methods |
 |---|---|
 | top-level | `me()`, `usage()`, `audit(Integer limit)`, `logConsent(ConsentIngest)` |
-| `sites()` | `list`, `create`, `get`, `delete`, `getConfig`, `putConfig`, `patchConfig`, `cookies`, `scan`, `scanStatus`, `ab`, `snippet`, `verify`, `brand`, `getFlow`, `editFlow`, `setFlow`, `enableAdPersonalization`, `banner`, `policy` (Markdown `String`), `analyzeSession` |
+| `sites()` | `list`, `create`, `get`, `delete`, `getConfig`, `putConfig`, `patchConfig`, `lintConfig` (consent-button parity, nothing saved), `cookies`, `scan`, `scanStatus`, `ab`, `snippet`, `verify`, `brand`, `getFlow`, `editFlow`, `setFlow`, `enableAdPersonalization`, `banner`, `policy` (Markdown `String`), `analyzeSession` |
 | `consent()` | `stats`, `log`, `export`, `receipt`, `eraseSubject`, `exportSubject` |
 | `dsar()` | `list`, `create`, `advance`, `response` (plain-text notice), `erase`, `export` |
 | `vendors()` | `list`, `create` |
 | `ropa()` | `list`, `create`, `exportCsv` |
 | `brandKits()` | `list`, `create`, `delete` |
+| `rightsPage()` | `get`, `put`, `patch`, `dryRun`, `getPublished`, `publish`, `versions`, `rollback` — `publish(cbid, baseUpdatedAt)` / `rollback(cbid, version, baseUpdatedAt)` go live only if the draft is still the one you read (a rollback replaces the draft); custom domains `listDomains`, `addDomain`, `verifyDomain`, `removeDomain` |
+| `rightsLinks()` | `create` — a signed, single-use link to the rights page for a signed-in person |
 | `preferences()` | `list`, `save`, `get` |
 | `members()` | `list`, `invite`, `setRole`, `remove` |
 | `keys()` | `list`, `issue` — `new ApiKeyIssueInput(name, scopes, cbids, expiresInDays)` for a least-privilege key —, `revoke`, `roll`, `update` |
 | `webhooks()` | `list`, `create`, `delete`, `update`, `rollSecret`, `test`, `deadLetters`, `replayDeadLetter` |
 | `banners()` | `list`, `create`, `get`, `update`, `delete`, `assignments`, `setAssignments`, `publish` |
-| `org()` | `get`, `update` — requires an unscoped key that is not property-locked |
+| `org()` | `get`, `update`, and your own provider for rights-request mail: `mailProvider`, `setMailProvider`, `testMailProvider`, `removeMailProvider` (no code mail until a test succeeds; there is no shared sender); the default captcha and sign-in provider for rights pages: `rightsCaptcha`, `setRightsCaptcha`, `removeRightsCaptcha`, `rightsIdentity`, `setRightsIdentity`, `removeRightsIdentity` — requires an unscoped key that is not property-locked |
+| `rightsCaptcha()` | `get`, `set`, `remove` — a site's own rights-page captcha (your keys, or off) |
+| `rightsIdentity()` | `get`, `set`, `remove` — a site's sign-in provider (`clerk`, `atlas` or `oidc_jwt`): a signed-in visitor is verified by their session, with no code mail; a site without its own uses the org default |
 | `assets()` | `upload` — requires `sites:write` |
 | `identity()` | `resolve`, `link`, `cluster` |
 | `vault()` | `record`, `current`, `permits` |

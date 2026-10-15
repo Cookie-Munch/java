@@ -37,6 +37,90 @@ class PlatformTest {
   }
 
   @Test
+  void orgMailProvider() throws Exception {
+    CookieMunch c = client(200, "{}");
+    c.org().mailProvider();
+    Map<String, Object> input = new HashMap<>();
+    input.put("provider", "sendgrid");
+    input.put("fromEmail", "p@acme.com");
+    input.put("secret", "SG.x");
+    c.org().setMailProvider(input);
+    c.org().testMailProvider("me@acme.com");
+    c.org().testMailProvider(null);
+    c.org().removeMailProvider();
+    List<String> seen = new ArrayList<>();
+    for (HttpTransport.Request r : calls) seen.add(r.method() + " " + r.url());
+    assertEquals(List.of(
+        "GET https://api.example.test/v1/org/mail-provider",
+        "PUT https://api.example.test/v1/org/mail-provider",
+        "POST https://api.example.test/v1/org/mail-provider/test",
+        "POST https://api.example.test/v1/org/mail-provider/test",
+        "DELETE https://api.example.test/v1/org/mail-provider"), seen);
+    assertEquals(input, body(calls.get(1)));
+    assertEquals(Map.of("to", "me@acme.com"), body(calls.get(2)));
+    assertEquals(Map.of(), body(calls.get(3)));
+  }
+
+  @Test
+  void rightsCaptcha() throws Exception {
+    CookieMunch c = client(200, "{}");
+    c.rightsCaptcha().get("s 1");
+    Map<String, Object> own = new HashMap<>();
+    own.put("mode", "own");
+    own.put("provider", "hcaptcha");
+    own.put("siteKey", "k-12345678");
+    own.put("secret", "sec");
+    c.rightsCaptcha().set("s1", own);
+    c.rightsCaptcha().remove("s1");
+    c.org().rightsCaptcha();
+    c.org().setRightsCaptcha(Map.of("mode", "off"));
+    c.org().removeRightsCaptcha();
+    List<String> seen = new ArrayList<>();
+    for (HttpTransport.Request r : calls) seen.add(r.method() + " " + r.url());
+    assertEquals(List.of(
+        "GET https://api.example.test/v1/sites/s%201/rights-captcha",
+        "PUT https://api.example.test/v1/sites/s1/rights-captcha",
+        "DELETE https://api.example.test/v1/sites/s1/rights-captcha",
+        "GET https://api.example.test/v1/org/rights-captcha",
+        "PUT https://api.example.test/v1/org/rights-captcha",
+        "DELETE https://api.example.test/v1/org/rights-captcha"), seen);
+    assertEquals(own, body(calls.get(1)));
+    assertEquals(Map.of("mode", "off"), body(calls.get(4)));
+  }
+
+  /** The sign-in provider rights requests are verified with: the site's own setting and the organisation default. */
+  @Test
+  void rightsIdentity() throws Exception {
+    CookieMunch c = client(200, "{}");
+    c.rightsIdentity().get("s 1");
+    Map<String, Object> clerk = new HashMap<>();
+    clerk.put("type", "clerk");
+    clerk.put("issuer", "https://clerk.acme.example");
+    clerk.put("authorizedParties", List.of("https://www.acme.example"));
+    c.rightsIdentity().set("s1", clerk);
+    c.rightsIdentity().remove("s1");
+    c.org().rightsIdentity();
+    Map<String, Object> oidc = new HashMap<>();
+    oidc.put("type", "oidc_jwt");
+    oidc.put("issuer", "https://id.acme.example");
+    oidc.put("jwksUrl", "https://id.acme.example/keys");
+    oidc.put("sessionCookieName", "sid");
+    c.org().setRightsIdentity(oidc);
+    c.org().removeRightsIdentity();
+    List<String> seen = new ArrayList<>();
+    for (HttpTransport.Request r : calls) seen.add(r.method() + " " + r.url());
+    assertEquals(List.of(
+        "GET https://api.example.test/v1/sites/s%201/rights-identity",
+        "PUT https://api.example.test/v1/sites/s1/rights-identity",
+        "DELETE https://api.example.test/v1/sites/s1/rights-identity",
+        "GET https://api.example.test/v1/org/rights-identity",
+        "PUT https://api.example.test/v1/org/rights-identity",
+        "DELETE https://api.example.test/v1/org/rights-identity"), seen);
+    assertEquals(clerk, body(calls.get(1)));
+    assertEquals(oidc, body(calls.get(4)));
+  }
+
+  @Test
   void deprovisionSuspendsByDefaultAndPurgesOnlyWhenAsked() {
     CookieMunch c = client(204, "");
     c.reseller().deprovision("c1", false);
@@ -97,5 +181,32 @@ class PlatformTest {
       assertFalse(r.url().contains("abc"));
       assertEquals(List.of(Map.of("space", "email_sha256", "value", "abc")), body(r).get("identifiers"));
     }
+  }
+
+  @Test
+  void rightsLinksCreateSendsTheSubjectAndOptions() throws Exception {
+    CookieMunch c = client(201, "{\"url\":\"https://cookiemunch.net/r/s1?t=a.b\",\"expiresAt\":1}");
+    Map<String, Object> out = c.rightsLinks().create("s1", "p@x.com", "u-1", List.of("access"), 600);
+    assertEquals("https://cookiemunch.net/r/s1?t=a.b", out.get("url"));
+    assertEquals("POST", calls.get(0).method());
+    assertEquals("https://api.example.test/v1/sites/s1/rights-links", calls.get(0).url());
+    assertEquals(Map.of("subject", Map.of("email", "p@x.com", "userId", "u-1"), "rights", List.of("access"), "ttlSeconds", 600), body(calls.get(0)));
+    c.rightsLinks().create("s1", "p@x.com");
+    assertEquals(Map.of("subject", Map.of("email", "p@x.com")), body(calls.get(1)));
+  }
+
+  @Test
+  void rightsPageDomains() throws Exception {
+    CookieMunch c = client(200, "{}");
+    c.rightsPage().listDomains("s 1");
+    c.rightsPage().addDomain("s", "privacy.acme.com");
+    c.rightsPage().verifyDomain("s", "privacy.acme.com");
+    c.rightsPage().removeDomain("s", "privacy.acme.com");
+    String base = "https://api.example.test/v1/sites";
+    assertEquals(List.of("GET", "POST", "POST", "DELETE"), calls.stream().map(HttpTransport.Request::method).toList());
+    assertEquals(base + "/s%201/rights-page/domains", calls.get(0).url());
+    assertEquals(Map.of("hostname", "privacy.acme.com"), body(calls.get(1)));
+    assertEquals(base + "/s/rights-page/domains/privacy.acme.com/verify", calls.get(2).url());
+    assertEquals(base + "/s/rights-page/domains/privacy.acme.com", calls.get(3).url());
   }
 }

@@ -279,6 +279,66 @@ class CookieMunchTest {
   }
 
   @Test
+  void lintConfigPostsToLintAndReplaceAddsTheFlag() {
+    FakeTransport transport = new FakeTransport();
+    transport.reply(200, "{\"mode\":\"merged\",\"designWarnings\":[],\"score\":100,\"suggestedReject\":[]}");
+    CookieMunch client = clientWith(transport);
+    Map<String, Object> banner = new HashMap<>();
+    banner.put("type", "accept-only");
+    Map<String, Object> cfg = new HashMap<>();
+    cfg.put("banner", banner);
+    Map<String, Object> r = client.sites().lintConfig("s1", cfg);
+    assertEquals(100, ((Number) r.get("score")).intValue());
+    assertEquals("POST", transport.last.method());
+    assertEquals("https://example.test/v1/sites/s1/config/lint", transport.last.url());
+    assertEquals("{\"banner\":{\"type\":\"accept-only\"}}", transport.last.body());
+    client.sites().lintConfig("s1", cfg, true);
+    assertEquals("https://example.test/v1/sites/s1/config/lint?replace=1", transport.last.url());
+  }
+
+  @Test
+  void rightsPagePatchAndDryRunKeepNullsSoAFieldCanBeRemoved() {
+    FakeTransport transport = new FakeTransport();
+    transport.reply(200, "{}");
+    CookieMunch client = clientWith(transport);
+
+    Map<String, Object> patch = new HashMap<>();
+    patch.put("customCss", null);
+    client.rightsPage().patch("s1", patch);
+    assertEquals("PATCH", transport.last.method());
+    assertEquals("https://example.test/v1/sites/s1/rights-page", transport.last.url());
+    assertEquals("{\"customCss\":null}", transport.last.body());
+
+    client.rightsPage().dryRun("s1", patch, false);
+    assertEquals("https://example.test/v1/sites/s1/rights-page?dryRun=1", transport.last.url());
+    assertEquals("{\"customCss\":null}", transport.last.body());
+
+    client.rightsPage().rollback("s1", 2);
+    assertEquals("POST", transport.last.method());
+    assertEquals("{\"version\":2}", transport.last.body());
+  }
+
+  @Test
+  void rightsPagePublishAndRollbackSendBaseUpdatedAtIncludingNull() {
+    FakeTransport transport = new FakeTransport();
+    transport.reply(200, "{}");
+    CookieMunch client = clientWith(transport);
+
+    client.rightsPage().publish("s1");
+    assertEquals("{}", transport.last.body());
+    client.rightsPage().publish("s1", 7L);
+    assertEquals("https://example.test/v1/sites/s1/rights-page/publish", transport.last.url());
+    assertEquals("{\"baseUpdatedAt\":7}", transport.last.body());
+    client.rightsPage().publish("s1", null);
+    assertEquals("{\"baseUpdatedAt\":null}", transport.last.body());
+    client.rightsPage().rollback("s1", 2, "2026-10-14T00:00:00.000Z");
+    assertEquals("https://example.test/v1/sites/s1/rights-page/rollback", transport.last.url());
+    assertEquals("{\"version\":2,\"baseUpdatedAt\":\"2026-10-14T00:00:00.000Z\"}", transport.last.body());
+    client.rightsPage().rollback("s1", 2, null);
+    assertEquals("{\"version\":2,\"baseUpdatedAt\":null}", transport.last.body());
+  }
+
+  @Test
   void audit() {
     FakeTransport transport = new FakeTransport();
     transport.reply(200, "{\"entries\":[{\"id\":\"aud_1\",\"action\":\"key.created\"}]}");

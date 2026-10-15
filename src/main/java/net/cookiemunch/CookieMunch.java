@@ -47,6 +47,7 @@ public final class CookieMunch {
   private final VendorsResource vendors;
   private final RopaResource ropa;
   private final BrandKitsResource brandKits;
+  private final RightsPageResource rightsPage;
   private final PreferencesResource preferences;
   private final MembersResource members;
   private final KeysResource keys;
@@ -63,6 +64,9 @@ public final class CookieMunch {
   private final RegulatoryResource regulatory;
   private final ResellerResource reseller;
   private final SubjectsResource subjects;
+  private final RightsLinksResource rightsLinks;
+  private final RightsCaptchaResource rightsCaptcha;
+  private final RightsIdentityResource rightsIdentity;
   private final OrgResource org;
   private final AssetsResource assets;
 
@@ -86,6 +90,7 @@ public final class CookieMunch {
     this.vendors = new VendorsResource(this);
     this.ropa = new RopaResource(this);
     this.brandKits = new BrandKitsResource(this);
+    this.rightsPage = new RightsPageResource(this);
     this.preferences = new PreferencesResource(this);
     this.members = new MembersResource(this);
     this.keys = new KeysResource(this);
@@ -102,6 +107,9 @@ public final class CookieMunch {
     this.regulatory = new RegulatoryResource(this);
     this.reseller = new ResellerResource(this);
     this.subjects = new SubjectsResource(this);
+    this.rightsLinks = new RightsLinksResource(this);
+    this.rightsCaptcha = new RightsCaptchaResource(this);
+    this.rightsIdentity = new RightsIdentityResource(this);
     this.org = new OrgResource(this);
     this.assets = new AssetsResource(this);
   }
@@ -198,6 +206,11 @@ public final class CookieMunch {
     return brandKits;
   }
 
+  /** The hosted rights page document. */
+  public RightsPageResource rightsPage() {
+    return rightsPage;
+  }
+
   public PreferencesResource preferences() {
     return preferences;
   }
@@ -263,6 +276,21 @@ public final class CookieMunch {
 
   public SubjectsResource subjects() {
     return subjects;
+  }
+
+  /** Account-linked rights requests (single-use links to the hosted rights page). */
+  public RightsLinksResource rightsLinks() {
+    return rightsLinks;
+  }
+
+  /** A site's rights-page captcha: your own keys (recommended), or off. */
+  public RightsCaptchaResource rightsCaptcha() {
+    return rightsCaptcha;
+  }
+
+  /** A site's sign-in provider: a visitor signed in to your site is verified by their session, with no code mail. */
+  public RightsIdentityResource rightsIdentity() {
+    return rightsIdentity;
   }
 
   /** The key's organisation. Requires an unscoped key that is not property-locked. */
