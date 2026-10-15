@@ -124,14 +124,64 @@ public final class SitesResource {
     return client.get(base(cbid) + "/cookies", CookieDeclaration.class);
   }
 
-  /** Kick off an async cookie crawl — {@code POST /v1/sites/{cbid}/scan}. */
+  /**
+   * Start a cookie crawl — {@code POST /v1/sites/{cbid}/scan}. Answers at once with
+   * {@code scanId} and {@code state: queued}.
+   */
   public ScanStatus scan(String cbid) {
     return client.request("POST", base(cbid) + "/scan", null, ScanStatus.class);
   }
 
-  /** Current cookie-scan status — {@code GET /v1/sites/{cbid}/scan}. */
+  /** {@link #scan(String)}, holding the request until it is done or failed, or {@code wait} (≤ 60 s) runs out. */
+  public ScanStatus scan(String cbid, java.time.Duration wait) {
+    return client.request("POST", base(cbid) + "/scan" + waitQuery(wait), null, ScanStatus.class);
+  }
+
+  /** The last scan: state, timings, cookie count, pages, error — {@code GET /v1/sites/{cbid}/scan}. */
   public ScanStatus scanStatus(String cbid) {
     return client.get(base(cbid) + "/scan", ScanStatus.class);
+  }
+
+  /** {@link #scanStatus(String)}, holding the request until a running scan settles, or {@code wait} (≤ 60 s) runs out. */
+  public ScanStatus scanStatus(String cbid, java.time.Duration wait) {
+    return client.get(base(cbid) + "/scan" + waitQuery(wait), ScanStatus.class);
+  }
+
+  /**
+   * Return once the site's scan is done or failed (read {@code state} and {@code error}),
+   * long-polling the server; at {@code timeout} it returns the still-running state. Each
+   * request asks the server to hold at most 25 s, inside the default transport's 30 s.
+   */
+  public ScanStatus waitForScan(String cbid, java.time.Duration timeout) {
+    return waitForScan(cbid, timeout, java.time.Duration.ofSeconds(25));
+  }
+
+  /** {@link #waitForScan(String, java.time.Duration)}, asking the server to hold each request at most {@code poll}. */
+  public ScanStatus waitForScan(String cbid, java.time.Duration timeout, java.time.Duration poll) {
+    long until = System.nanoTime() + timeout.toNanos();
+    while (true) {
+      long left = until - System.nanoTime();
+      long asked = Math.max(0, Math.min(Math.min(60_000_000_000L, left), poll.toNanos()));
+      long started = System.nanoTime();
+      ScanStatus r = scanStatus(cbid, java.time.Duration.ofNanos(asked));
+      if (!"scanning".equals(r.status()) || until - System.nanoTime() <= 0) return r;
+      // A server that answered sooner than asked is not hammered.
+      long early = Math.min(1_000_000_000L, until - System.nanoTime()) - (System.nanoTime() - started);
+      if (early > 0) {
+        try {
+          Thread.sleep(early / 1_000_000L, (int) (early % 1_000_000L));
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          return r;
+        }
+      }
+    }
+  }
+
+  /** {@code ?wait=30}, {@code ?wait=1.5}. */
+  private static String waitQuery(java.time.Duration wait) {
+    double s = Math.round(wait.toMillis()) / 1000.0;
+    return "?wait=" + (s == Math.floor(s) ? String.valueOf((long) s) : String.valueOf(s));
   }
 
   /** A/B experiment results — {@code GET /v1/sites/{cbid}/ab}. */
@@ -318,6 +368,44 @@ public final class SitesResource {
     body.put("cookies", cookies);
     if (replace) body.put("replace", true);
     return client.requestMap("PUT", base(cbid) + "/cookies" + (dryRun ? "?dryRun=1" : ""), body);
+  }
+
+  /**
+   * Retire a cookie the site renamed or stopped setting — {@code POST
+   * /v1/sites/{cbid}/cookies/{name}/retire}. It leaves the banner's cookie list,
+   * {@code data-cc="declaration"} and the public feed, and stays listed for the owner with
+   * {@code retired}. A name ending in {@code *} retires every cookie with that prefix. If a
+   * crawl or a visit sees it again afterwards it is listed again, flagged
+   * {@code retired_but_seen}.
+   *
+   * @param renamedTo the new name, or {@code null}
+   * @param note a note, or {@code null}
+   * @return {@code { cookie, matched }}
+   */
+  public Map<String, Object> retireCookie(String cbid, String name, String renamedTo, String note) {
+    return retireCookie(cbid, name, renamedTo, note, false);
+  }
+
+  /** {@link #retireCookie(String, String, String, String)}; with {@code dryRun} nothing is stored and the answer adds the would-be list ({@code retired}). */
+  public Map<String, Object> retireCookie(String cbid, String name, String renamedTo, String note, boolean dryRun) {
+    Map<String, Object> body = new java.util.LinkedHashMap<>();
+    if (renamedTo != null) body.put("renamedTo", renamedTo);
+    if (note != null) body.put("note", note);
+    return client.requestMap("POST", base(cbid) + "/cookies/" + Query.pathSegment(name) + "/retire" + (dryRun ? "?dryRun=1" : ""), body);
+  }
+
+  /** Un-retire a cookie: it is listed again everywhere — {@code DELETE /v1/sites/{cbid}/cookies/{name}/retire}. */
+  public void unretireCookie(String cbid, String name) {
+    client.requestVoid("DELETE", base(cbid) + "/cookies/" + Query.pathSegment(name) + "/retire", null);
+  }
+
+  /** What un-retiring would leave ({@code retired}), with nothing removed. {@code dryRun} false un-retires and returns an empty map. */
+  public Map<String, Object> unretireCookie(String cbid, String name, boolean dryRun) {
+    if (!dryRun) {
+      unretireCookie(cbid, name);
+      return Map.of();
+    }
+    return client.requestMap("DELETE", base(cbid) + "/cookies/" + Query.pathSegment(name) + "/retire?dryRun=1", null);
   }
 
   /**

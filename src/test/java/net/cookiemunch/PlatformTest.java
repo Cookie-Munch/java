@@ -254,4 +254,41 @@ class PlatformTest {
     list.fulfillment().executorWebhookDeliveries("ex 1");
     assertEquals("GET https://api.example.test/v1/dsar/executors/ex%201/webhook/deliveries", calls.get(0).method() + " " + calls.get(0).url());
   }
+
+  @Test
+  void retireAndUnretire() throws Exception {
+    CookieMunch c = client(200, "{\"dryRun\":true,\"retired\":[]}");
+    c.sites().retireCookie("cb", "old", "new", "v2");
+    c.sites().retireCookie("cb", "atlas_*", null, null, true);
+    Map<String, Object> out = c.sites().unretireCookie("cb", "old", true);
+    c.sites().unretireCookie("cb", "old");
+    List<String> seen = new ArrayList<>();
+    for (HttpTransport.Request r : calls) seen.add(r.method() + " " + r.url());
+    assertEquals(List.of(
+        "POST https://api.example.test/v1/sites/cb/cookies/old/retire",
+        "POST https://api.example.test/v1/sites/cb/cookies/atlas_*/retire?dryRun=1",
+        "DELETE https://api.example.test/v1/sites/cb/cookies/old/retire?dryRun=1",
+        "DELETE https://api.example.test/v1/sites/cb/cookies/old/retire"), seen);
+    assertEquals(Map.of("renamedTo", "new", "note", "v2"), body(calls.get(0)));
+    assertEquals(Map.of(), body(calls.get(1)));
+    assertEquals(true, out.get("dryRun"));
+  }
+
+  @Test
+  void scanWaitAndWaitForScan() {
+    CookieMunch c = client(200, "{\"status\":\"idle\",\"state\":\"done\",\"scanId\":\"s1\",\"cookieCount\":3,\"keptFromEarlier\":12,\"pagesVisited\":5,\"durationMs\":31000,\"error\":null,\"lastScannedAt\":9}");
+    c.sites().scan("cb", java.time.Duration.ofSeconds(30));
+    c.sites().scanStatus("cb", java.time.Duration.ofMillis(1500));
+    net.cookiemunch.model.ScanStatus r = c.sites().waitForScan("cb", java.time.Duration.ofMinutes(2));
+    assertEquals("https://api.example.test/v1/sites/cb/scan?wait=30", calls.get(0).url());
+    assertEquals("https://api.example.test/v1/sites/cb/scan?wait=1.5", calls.get(1).url());
+    // Inside the default transport's 30 s timeout.
+    assertEquals("https://api.example.test/v1/sites/cb/scan?wait=25", calls.get(2).url());
+    assertEquals("done", r.state());
+    assertEquals("s1", r.scanId());
+    assertEquals(3, r.cookieCount());
+    assertEquals(12, r.keptFromEarlier());
+    assertEquals(5, r.pagesVisited());
+    assertEquals(31000L, r.durationMs());
+  }
 }
