@@ -38,6 +38,7 @@ public final class CookieMunch {
   private final String apiKey;
   private final String baseUrl;
   private final String userAgent;
+  private final boolean strictUnknownFields;
   private final HttpTransport transport;
   private final Json json = new Json();
 
@@ -82,6 +83,7 @@ public final class CookieMunch {
     this.apiKey = b.apiKey;
     this.baseUrl = trimTrailingSlash(b.baseUrl == null ? DEFAULT_BASE_URL : b.baseUrl);
     this.userAgent = b.userAgent;
+    this.strictUnknownFields = b.strictUnknownFields;
     this.transport = b.transport != null ? b.transport : new JdkHttpTransport();
 
     this.sites = new SitesResource(this);
@@ -159,6 +161,24 @@ public final class CookieMunch {
   /** Current resource usage for the org — {@code GET /v1/usage}. */
   public Usage usage() {
     return get("/v1/usage", Usage.class);
+  }
+
+  /**
+   * Every link a site's privacy wiring depends on, one row each with {@code ok} (null = could not
+   * check) and a {@code fixHint} — {@code GET /v1/integration-health}. {@code cbid} may be null
+   * when the org has one site.
+   */
+  public Map<String, Object> integrationHealth(String cbid) {
+    return getMap("/v1/integration-health" + (cbid == null ? "" : "?cbid=" + Query.encode(cbid)));
+  }
+
+  /**
+   * Wire a product's privacy in one call (site, connected systems, Atlas, Forumulate) —
+   * {@code POST /v1/provision}. Idempotent; {@code dryRun} writes nothing anywhere. Secrets in
+   * {@code input} are used for this request only; none is returned.
+   */
+  public Map<String, Object> provision(Map<String, Object> input, boolean dryRun) {
+    return requestMap("POST", "/v1/provision" + (dryRun ? "?dryRun=1" : ""), input);
   }
 
   /**
@@ -351,6 +371,9 @@ public final class CookieMunch {
     headers.put("Authorization", "Bearer " + apiKey);
     headers.put("X-API-Key", apiKey);
     headers.put("Accept", "application/json");
+    if (strictUnknownFields && !"GET".equals(method)) {
+      headers.put("Prefer", "strict-unknown-fields");
+    }
     if (userAgent != null && !userAgent.isEmpty()) {
       headers.put("User-Agent", userAgent);
     }
@@ -409,6 +432,7 @@ public final class CookieMunch {
     private String baseUrl = DEFAULT_BASE_URL;
     private String userAgent = DEFAULT_USER_AGENT;
     private HttpTransport transport;
+    private boolean strictUnknownFields;
 
     Builder(String apiKey) {
       this.apiKey = apiKey;
@@ -428,6 +452,15 @@ public final class CookieMunch {
     /** Override the {@code User-Agent} sent on every request. */
     public Builder userAgent(String userAgent) {
       this.userAgent = userAgent;
+      return this;
+    }
+
+    /**
+     * Send {@code Prefer: strict-unknown-fields} on writes: a body field the API does not declare
+     * is refused ({@code 400 unknown_field}) instead of ignored.
+     */
+    public Builder strictUnknownFields(boolean strict) {
+      this.strictUnknownFields = strict;
       return this;
     }
 

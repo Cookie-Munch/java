@@ -70,6 +70,57 @@ public final class FulfillmentResource {
   }
 
   /**
+   * Connect a system from a versioned preset — {@code POST /v1/dsar/executors} with
+   * {@code preset}: {@code atlas} (optional {@code atlasIdAppId}), {@code forumulate}
+   * ({@code orgId}), {@code cm-standard-v1} ({@code baseUrl} and {@code system}) or
+   * {@code chatly}. {@code options} holds those and {@code presetVersion}, {@code webhookSecret},
+   * {@code auto}, {@code cbid}; it may be null. The response carries {@code presetVersion} and
+   * {@code presetDiff}. A preset waiting on another platform's API is refused with 409
+   * {@code preset_waiting_on_platform}; see {@link #executorPresets}.
+   */
+  public Map<String, Object> connectExecutorPreset(String preset, String secretKey, Map<String, Object> options) {
+    return client.requestMap("POST", "/v1/dsar/executors", presetBody(preset, secretKey, options));
+  }
+
+  /** {@link #connectExecutorPreset} validated in full with nothing stored ({@code ?dryRun=1}). */
+  public Map<String, Object> dryRunConnectExecutorPreset(String preset, String secretKey, Map<String, Object> options) {
+    return client.requestMap("POST", "/v1/dsar/executors?dryRun=1", presetBody(preset, secretKey, options));
+  }
+
+  private static Map<String, Object> presetBody(String preset, String secretKey, Map<String, Object> options) {
+    Map<String, Object> body = new LinkedHashMap<>();
+    body.put("preset", preset);
+    body.put("secretKey", secretKey);
+    if (options != null) body.putAll(options);
+    return body;
+  }
+
+  /**
+   * The versioned presets, whether each is usable now or waits on another platform, and the
+   * organisation's canary address — {@code GET /v1/dsar/executors/presets}.
+   */
+  public Map<String, Object> executorPresets() {
+    return client.getMap("/v1/dsar/executors/presets");
+  }
+
+  /**
+   * Rebuild a connection from its preset's latest version (or {@code presetVersion}), keeping
+   * its id and credential; {@code preset} adopts one on a hand-written connection —
+   * {@code POST /v1/dsar/executors/{id}/upgrade-preset}. {@code input} may be null. Answers
+   * with a {@code diff}.
+   */
+  public Map<String, Object> upgradeExecutorPreset(String id, Map<String, Object> input) {
+    return client.requestMap(
+        "POST", "/v1/dsar/executors/" + Query.pathSegment(id) + "/upgrade-preset", input == null ? new LinkedHashMap<>() : new LinkedHashMap<>(input));
+  }
+
+  /** What {@link #upgradeExecutorPreset} would change; nothing is stored ({@code ?dryRun=1}). */
+  public Map<String, Object> dryRunUpgradeExecutorPreset(String id, Map<String, Object> input) {
+    return client.requestMap(
+        "POST", "/v1/dsar/executors/" + Query.pathSegment(id) + "/upgrade-preset?dryRun=1", input == null ? new LinkedHashMap<>() : new LinkedHashMap<>(input));
+  }
+
+  /**
    * Change a connection in place — {@code PATCH /v1/dsar/executors/{id}}. {@code patch} is sent
    * as-is: only the keys present change, the credential is kept unless {@code secretKey} is
    * given, and {@code "webhookSecret" -> null} removes it (nulls are kept for this call).
@@ -118,6 +169,18 @@ public final class FulfillmentResource {
     body.put("email", email);
     if (operation != null) body.put("operation", operation);
     if (open != null) body.put("open", open);
+    return client.requestMap("POST", "/v1/dsar/executors/" + Query.pathSegment(id) + "/test", body);
+  }
+
+  /**
+   * {@link #testExecutor} with the organisation's canary address instead of a person's — no
+   * real personal data. A canary {@code locate} also updates the connection's {@code health}.
+   * {@code operation} may be null (locate).
+   */
+  public Map<String, Object> testExecutorCanary(String id, String operation) {
+    Map<String, Object> body = new LinkedHashMap<>();
+    body.put("canary", true);
+    if (operation != null) body.put("operation", operation);
     return client.requestMap("POST", "/v1/dsar/executors/" + Query.pathSegment(id) + "/test", body);
   }
 

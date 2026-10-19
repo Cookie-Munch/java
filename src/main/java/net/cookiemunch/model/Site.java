@@ -12,4 +12,8 @@ public record Site(
     Boolean verified,
     String verifyToken,
     String verifyMethod,
-    Long verifiedAt) {}
+    Long verifiedAt,
+    /** The display name data subjects see; null when unset (the domain is shown). */
+    String name,
+    /** Other hosts serving the site: accepted consent origins, never verified claims. */
+    java.util.List<String> aliases) {}

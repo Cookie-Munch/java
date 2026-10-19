@@ -50,9 +50,47 @@ public final class SitesResource {
     return client.get(base(cbid), Site.class);
   }
 
+  /**
+   * Rename or move a site — {@code PATCH /v1/sites/{cbid}} with any of {@code domain},
+   * {@code name} (a null value clears it) and {@code aliases} (an empty list clears them). The cbid
+   * and the consent ledger stay; a domain move clears verification. Nulls in {@code patch} are sent.
+   * The result carries {@code site}, {@code diff} and {@code effects}.
+   */
+  public Map<String, Object> update(String cbid, Map<String, Object> patch) {
+    return client.requestMapKeepingNulls("PATCH", base(cbid), new java.util.LinkedHashMap<>(patch));
+  }
+
+  /** As {@link #update(String, Map)} with {@code ?dryRun=1}: the diff and effects, nothing stored. */
+  public Map<String, Object> dryRunUpdate(String cbid, Map<String, Object> patch) {
+    return client.requestMapKeepingNulls("PATCH", base(cbid) + "?dryRun=1", new java.util.LinkedHashMap<>(patch));
+  }
+
   /** Delete a site — {@code DELETE /v1/sites/{cbid}}. */
   public void delete(String cbid) {
     client.requestVoid("DELETE", base(cbid), null);
+  }
+
+  /** Partner links and the partner catalogue — {@code GET /v1/sites/{cbid}/partners}. */
+  public Map<String, Object> listPartners(String cbid) {
+    return client.getMap(base(cbid) + "/partners");
+  }
+
+  /**
+   * Grant a partner platform ({@code forumulate}, {@code atlas}) the site's consent events —
+   * {@code POST /v1/sites/{cbid}/partners}. No secret is created; a repeat is a no-op. {@code label}
+   * may be null.
+   */
+  public Map<String, Object> linkPartner(String cbid, String partner, String externalId, String label) {
+    Map<String, Object> body = new java.util.LinkedHashMap<>();
+    body.put("partner", partner);
+    body.put("externalId", externalId);
+    if (label != null) body.put("label", label);
+    return client.requestMap("POST", base(cbid) + "/partners", body);
+  }
+
+  /** Revoke a partner link; deliveries stop at once — {@code DELETE /v1/sites/{cbid}/partners/{linkId}}. */
+  public Map<String, Object> unlinkPartner(String cbid, String linkId) {
+    return client.requestMap("DELETE", base(cbid) + "/partners/" + Query.pathSegment(linkId), null);
   }
 
   /** Get a site's config — {@code GET /v1/sites/{cbid}/config}. */
@@ -406,6 +444,60 @@ public final class SitesResource {
       return Map.of();
     }
     return client.requestMap("DELETE", base(cbid) + "/cookies/" + Query.pathSegment(name) + "/retire?dryRun=1", null);
+  }
+
+  /**
+   * Every declaration preset (atlas, forumulate, chatly, cookiemunch): parameters, what each
+   * declared on this site, and whether the vendor's manifest exists yet —
+   * {@code GET /v1/sites/{cbid}/cookies/presets}.
+   */
+  public Map<String, Object> cookiePresets(String cbid) {
+    return client.requestMap("GET", base(cbid) + "/cookies/presets", null);
+  }
+
+  /**
+   * Apply (or re-sync) a vendor preset: declares what that platform writes, marked
+   * {@code vendor} — {@code PUT /v1/sites/{cbid}/cookies/presets/{vendor}}. Atlas takes
+   * {@code frontendApiHost}/{@code crossSubdomainCookies}; Chatly {@code publicId}/{@code dragging}/{@code category}.
+   */
+  public Map<String, Object> applyCookiePreset(String cbid, String vendor, Map<String, Object> params) {
+    return applyCookiePreset(cbid, vendor, params, false);
+  }
+
+  /** {@link #applyCookiePreset(String, String, Map)}; with {@code dryRun} nothing is stored. */
+  public Map<String, Object> applyCookiePreset(String cbid, String vendor, Map<String, Object> params, boolean dryRun) {
+    return client.requestMap("PUT", base(cbid) + "/cookies/presets/" + Query.pathSegment(vendor) + (dryRun ? "?dryRun=1" : ""), params == null ? Map.of() : params);
+  }
+
+  /** Remove every declaration a vendor preset made — {@code DELETE /v1/sites/{cbid}/cookies/presets/{vendor}}. */
+  public Map<String, Object> removeCookiePreset(String cbid, String vendor, boolean dryRun) {
+    return client.requestMap("DELETE", base(cbid) + "/cookies/presets/" + Query.pathSegment(vendor) + (dryRun ? "?dryRun=1" : ""), null);
+  }
+
+  /** Remove every stored (scanned or observed) row of this name; a declaration stays — {@code DELETE /v1/sites/{cbid}/observed-cookies/{name}}. */
+  public void deleteObservedCookie(String cbid, String name) {
+    client.requestVoid("DELETE", base(cbid) + "/observed-cookies/" + Query.pathSegment(name), null);
+  }
+
+  /** What deleting it would remove, with nothing removed. {@code dryRun} false deletes and returns an empty map. */
+  public Map<String, Object> deleteObservedCookie(String cbid, String name, boolean dryRun) {
+    if (!dryRun) {
+      deleteObservedCookie(cbid, name);
+      return Map.of();
+    }
+    return client.requestMap("DELETE", base(cbid) + "/observed-cookies/" + Query.pathSegment(name) + "?dryRun=1", null);
+  }
+
+  /**
+   * Purge observed since T: remove every row a real visit first reported at or after
+   * {@code since} (and before {@code until}, or {@code null}) — ISO-8601 or epoch ms. Crawled
+   * rows and declarations stay — {@code POST /v1/sites/{cbid}/observed-cookies/purge}.
+   */
+  public Map<String, Object> purgeObservedCookies(String cbid, String since, String until, boolean dryRun) {
+    Map<String, Object> body = new java.util.LinkedHashMap<>();
+    body.put("since", since);
+    if (until != null) body.put("until", until);
+    return client.requestMap("POST", base(cbid) + "/observed-cookies/purge" + (dryRun ? "?dryRun=1" : ""), body);
   }
 
   /**

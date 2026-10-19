@@ -117,7 +117,9 @@ client trivial to unit-test without a socket (see `src/test/java`).
 | Group | Methods |
 |---|---|
 | top-level | `me()`, `usage()`, `audit(Integer limit)`, `logConsent(ConsentIngest)` |
-| `sites()` | `list`, `create`, `get`, `delete`, `getConfig`, `putConfig`, `patchConfig`, `lintConfig` (consent-button parity, nothing saved), `cookies`, `scan`, `scanStatus`, `ab`, `snippet`, `verify`, `brand`, `getFlow`, `editFlow`, `setFlow`, `enableAdPersonalization`, `banner`, `policy` (Markdown `String`), `analyzeSession` |
+| `integrationHealth(cbid)`, `provision(input, dryRun)` | every integration link with a fix hint; one-call wiring (idempotent, no secret returned) |
+| `keys().report(unusedDays, expiringDays)`, `keys().setExpiry(prefix, ms or null)` | key hygiene; `CookieMunch.builder(key).strictUnknownFields(true)` refuses mistyped fields |
+| `sites()` | `list`, `create`, `get`, `update`/`dryRunUpdate` (rename or move; cbid and ledger stay), `listPartners`, `linkPartner`, `unlinkPartner` (partner links, no secret), `delete`, `getConfig`, `putConfig`, `patchConfig`, `lintConfig` (consent-button parity, nothing saved), `cookies`, `scan`, `scanStatus`, `ab`, `snippet`, `verify`, `brand`, `getFlow`, `editFlow`, `setFlow`, `enableAdPersonalization`, `banner`, `policy` (Markdown `String`), `analyzeSession` |
 | `consent()` | `stats`, `log`, `export`, `receipt`, `eraseSubject`, `exportSubject` |
 | `dsar()` | `list`, `create`, `advance`, `response` (plain-text notice), `erase`, `export` |
 | `vendors()` | `list`, `create` |

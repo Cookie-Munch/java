@@ -54,4 +54,25 @@ public final class KeysResource {
   public Map<String, Object> update(String prefix, ApiKeyUpdate patch) {
     return client.requestMap("PATCH", "/v1/keys/" + Query.pathSegment(prefix), patch);
   }
+
+  /**
+   * Set a key's expiry (epoch ms) or, with {@code null}, remove it — {@code PATCH /v1/keys/{prefix}}
+   * with {@code expiresAt}.
+   */
+  public Map<String, Object> setExpiry(String prefix, Long expiresAt) {
+    Map<String, Object> body = new java.util.LinkedHashMap<>();
+    body.put("expiresAt", expiresAt);
+    return client.requestMapKeepingNulls("PATCH", "/v1/keys/" + Query.pathSegment(prefix), body);
+  }
+
+  /**
+   * Key hygiene — {@code GET /v1/keys/report}: keys unused for {@code unusedDays} (null = 90), keys
+   * with broad access, and keys expiring within {@code expiringDays} (null = 14), each with a reason.
+   */
+  public Map<String, Object> report(Integer unusedDays, Integer expiringDays) {
+    StringBuilder q = new StringBuilder();
+    if (unusedDays != null) q.append(q.length() == 0 ? "?" : "&").append("unusedDays=").append(unusedDays);
+    if (expiringDays != null) q.append(q.length() == 0 ? "?" : "&").append("expiringDays=").append(expiringDays);
+    return client.getMap("/v1/keys/report" + q);
+  }
 }

@@ -256,6 +256,25 @@ class PlatformTest {
   }
 
   @Test
+  void executorPresetsCanaryAndUpgrade() throws Exception {
+    CookieMunch c = client(200, "{}");
+    c.fulfillment().executorPresets();
+    c.fulfillment().connectExecutorPreset("forumulate", "fck_12345678", Map.of("orgId", "org-1"));
+    c.fulfillment().testExecutorCanary("ex 1", null);
+    c.fulfillment().dryRunUpgradeExecutorPreset("ex 1", Map.of("atlasIdAppId", "app_1"));
+    List<String> seen = new ArrayList<>();
+    for (HttpTransport.Request r : calls) seen.add(r.method() + " " + r.url());
+    assertEquals(List.of(
+        "GET https://api.example.test/v1/dsar/executors/presets",
+        "POST https://api.example.test/v1/dsar/executors",
+        "POST https://api.example.test/v1/dsar/executors/ex%201/test",
+        "POST https://api.example.test/v1/dsar/executors/ex%201/upgrade-preset?dryRun=1"), seen);
+    assertEquals(Map.of("preset", "forumulate", "secretKey", "fck_12345678", "orgId", "org-1"), body(calls.get(1)));
+    assertEquals(Map.of("canary", true), body(calls.get(2)));
+    assertEquals(Map.of("atlasIdAppId", "app_1"), body(calls.get(3)));
+  }
+
+  @Test
   void retireAndUnretire() throws Exception {
     CookieMunch c = client(200, "{\"dryRun\":true,\"retired\":[]}");
     c.sites().retireCookie("cb", "old", "new", "v2");

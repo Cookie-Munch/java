@@ -59,6 +59,13 @@ public final class DsarResource {
     return client.request("POST", path, Map.of("toStatus", toStatus), DsarEnvelope.class).request();
   }
 
+  /** {@link #advance(String, String)}, replacing the line the subject reads in the notice. */
+  public DsarRequest advance(String id, String toStatus, String messageToSubject) {
+    if (messageToSubject == null) return advance(id, toStatus);
+    String path = "/v1/dsar/" + Query.pathSegment(id) + "/advance";
+    return client.request("POST", path, Map.of("toStatus", toStatus, "messageToSubject", messageToSubject), DsarEnvelope.class).request();
+  }
+
   /** The subject-facing response notice for a request, as plain text — {@code GET /v1/dsar/{id}/response}. */
   public String response(String id) {
     return client.requestRaw("GET", "/v1/dsar/" + Query.pathSegment(id) + "/response", null);
