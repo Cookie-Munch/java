@@ -447,7 +447,7 @@ public final class SitesResource {
   }
 
   /**
-   * Every declaration preset (atlas, forumulate, chatly, cookiemunch): parameters, what each
+   * Every declaration preset (atlas, forumulate, chatly, cookiemunch, referally): parameters, what each
    * declared on this site, and whether the vendor's manifest exists yet —
    * {@code GET /v1/sites/{cbid}/cookies/presets}.
    */
@@ -458,7 +458,8 @@ public final class SitesResource {
   /**
    * Apply (or re-sync) a vendor preset: declares what that platform writes, marked
    * {@code vendor} — {@code PUT /v1/sites/{cbid}/cookies/presets/{vendor}}. Atlas takes
-   * {@code frontendApiHost}/{@code crossSubdomainCookies}; Chatly {@code publicId}/{@code dragging}/{@code category}.
+   * {@code frontendApiHost}/{@code crossSubdomainCookies}; Chatly {@code publicId}/{@code dragging}/{@code category};
+   * Referally {@code cookieDomain}/{@code cookieDays}/{@code category}.
    */
   public Map<String, Object> applyCookiePreset(String cbid, String vendor, Map<String, Object> params) {
     return applyCookiePreset(cbid, vendor, params, false);

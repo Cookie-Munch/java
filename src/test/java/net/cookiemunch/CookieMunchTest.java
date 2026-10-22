@@ -54,6 +54,22 @@ class CookieMunchTest {
   }
 
   @Test
+  void userAgentDefaultsToSdkAndVersionAndCanBeOverridden() {
+    FakeTransport transport = new FakeTransport();
+    transport.reply(200, "{}");
+    clientWith(transport).me();
+    assertEquals("cookiemunch-java/0.1.0", transport.last.headers().get("User-Agent"));
+
+    CookieMunch custom = CookieMunch.builder("fck_test_key")
+        .baseUrl("https://example.test/")
+        .transport(transport)
+        .userAgent("acme/2")
+        .build();
+    custom.me();
+    assertEquals("acme/2", transport.last.headers().get("User-Agent"));
+  }
+
+  @Test
   void sendsBearerAndApiKeyHeadersOnGet() {
     FakeTransport transport = new FakeTransport();
     transport.reply(200, "{\"orgId\":\"org_1\",\"plan\":\"pro\",\"keyPrefix\":\"fck_test\"}");
