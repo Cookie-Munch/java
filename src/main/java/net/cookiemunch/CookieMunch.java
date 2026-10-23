@@ -67,6 +67,8 @@ public final class CookieMunch {
   private final SubjectsResource subjects;
   private final RightsLinksResource rightsLinks;
   private final RightsCaptchaResource rightsCaptcha;
+  private final ConsentSyncSecretResource consentSyncSecret;
+  private final PreferenceCenterResource preferenceCenter;
   private final RightsIdentityResource rightsIdentity;
   private final OrgResource org;
   private final AssetsResource assets;
@@ -111,6 +113,8 @@ public final class CookieMunch {
     this.subjects = new SubjectsResource(this);
     this.rightsLinks = new RightsLinksResource(this);
     this.rightsCaptcha = new RightsCaptchaResource(this);
+    this.consentSyncSecret = new ConsentSyncSecretResource(this);
+    this.preferenceCenter = new PreferenceCenterResource(this);
     this.rightsIdentity = new RightsIdentityResource(this);
     this.org = new OrgResource(this);
     this.assets = new AssetsResource(this);
@@ -301,6 +305,16 @@ public final class CookieMunch {
   /** Account-linked rights requests (single-use links to the hosted rights page). */
   public RightsLinksResource rightsLinks() {
     return rightsLinks;
+  }
+
+  /** A site's consent-sync signing secret (hosted consent sync). */
+  public ConsentSyncSecretResource consentSyncSecret() {
+    return consentSyncSecret;
+  }
+
+  /** The hosted preference centre: mint a token for a visitor your server has signed in. */
+  public PreferenceCenterResource preferenceCenter() {
+    return preferenceCenter;
   }
 
   /** A site's rights-page captcha: your own keys (recommended), or off. */

@@ -61,6 +61,24 @@ class PlatformTest {
   }
 
   @Test
+  void orgController() throws Exception {
+    CookieMunch c = client(200, "{}");
+    c.org().controller();
+    Map<String, Object> input = new HashMap<>();
+    input.put("legalName", "Crossly Ltd");
+    input.put("contactEmail", "p@crossly.example");
+    c.org().setController(input);
+    c.org().removeController();
+    List<String> seen = new ArrayList<>();
+    for (HttpTransport.Request r : calls) seen.add(r.method() + " " + r.url());
+    assertEquals(List.of(
+        "GET https://api.example.test/v1/org/controller",
+        "PUT https://api.example.test/v1/org/controller",
+        "DELETE https://api.example.test/v1/org/controller"), seen);
+    assertEquals(input, body(calls.get(1)));
+  }
+
+  @Test
   void orgMailProvider() throws Exception {
     CookieMunch c = client(200, "{}");
     c.org().mailProvider();
@@ -83,6 +101,31 @@ class PlatformTest {
     assertEquals(input, body(calls.get(1)));
     assertEquals(Map.of("to", "me@acme.com"), body(calls.get(2)));
     assertEquals(Map.of(), body(calls.get(3)));
+  }
+
+  @Test
+  void consentSyncSecret() throws Exception {
+    CookieMunch c = client(200, "{}");
+    c.consentSyncSecret().get("s 1");
+    c.consentSyncSecret().rotate("s1");
+    c.consentSyncSecret().remove("s1");
+    List<String> seen = new ArrayList<>();
+    for (HttpTransport.Request r : calls) seen.add(r.method() + " " + r.url());
+    assertEquals(List.of(
+        "GET https://api.example.test/v1/sites/s%201/consent-sync-secret",
+        "POST https://api.example.test/v1/sites/s1/consent-sync-secret",
+        "DELETE https://api.example.test/v1/sites/s1/consent-sync-secret"), seen);
+  }
+
+  @Test
+  void preferenceCenterMintToken() throws Exception {
+    CookieMunch c = client(201, "{\"token\":\"t\",\"expiresAt\":\"2026-01-01T00:00:00.000Z\"}");
+    Map<String, Object> out = c.preferenceCenter().mintToken("cb1", "a@x.com", null, null);
+    c.preferenceCenter().mintToken("cb1", null, "u1", 60);
+    assertEquals("t", out.get("token"));
+    assertEquals("POST https://api.example.test/v1/preference-center/tokens", calls.get(0).method() + " " + calls.get(0).url());
+    assertEquals(Map.of("cbid", "cb1", "email", "a@x.com"), body(calls.get(0)));
+    assertEquals(Map.of("cbid", "cb1", "subjectId", "u1", "ttlSeconds", 60), body(calls.get(1)));
   }
 
   @Test

@@ -30,6 +30,29 @@ public final class OrgResource {
   }
 
   /**
+   * Your organisation's own data-controller identity — {@code GET /v1/org/controller}. Every
+   * rights notice names it, before any site config {@code controller} block. {@code set} is
+   * false when there is none.
+   */
+  public Map<String, Object> controller() {
+    return client.requestMap("GET", "/v1/org/controller", null);
+  }
+
+  /**
+   * Set the organisation's data-controller identity — {@code PUT /v1/org/controller}. Keys:
+   * {@code legalName} (required), {@code contactEmail}, {@code address}, {@code dpoContact}.
+   * Replaces the stored one: a key left out is removed. Needs an unscoped key or {@code rights:write}.
+   */
+  public Map<String, Object> setController(Map<String, Object> input) {
+    return client.requestMap("PUT", "/v1/org/controller", new LinkedHashMap<>(input));
+  }
+
+  /** Remove the identity — {@code DELETE /v1/org/controller}. Notices then name the site config {@code controller} block. */
+  public void removeController() {
+    client.requestVoid("DELETE", "/v1/org/controller", null);
+  }
+
+  /**
    * Your own mail provider for rights-request mail — {@code GET /v1/org/mail-provider}. Never
    * returns the credential, only {@code secretLast4}; {@code sender} says whether verification
    * codes go through it now ({@code own}) or are not mailed at all ({@code none}) — there is no
