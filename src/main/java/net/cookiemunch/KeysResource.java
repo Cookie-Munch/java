@@ -86,6 +86,11 @@ public final class KeysResource {
     return client.getMap("/v1/keys/self");
   }
 
+  /** Re-pin the calling key to another dated API version (any key, for itself) — {@code PATCH /v1/keys/self}. */
+  public Map<String, Object> updateSelf(String apiVersion) {
+    return client.requestMap("PATCH", "/v1/keys/self", Map.of("apiVersion", apiVersion));
+  }
+
   /**
    * The calling key rotates itself — {@code POST /v1/keys/self/roll}. The old secret stops at once;
    * build the client with an {@code Idempotency-Key} header so a lost answer replays.
@@ -103,6 +108,23 @@ public final class KeysResource {
     body.put("scopes", scopes);
     body.put("ttlSeconds", ttlSeconds);
     return client.requestMap("POST", "/v1/keys/vend", body);
+  }
+
+  /**
+   * Swap an identity provider's token for a short-lived, scoped key — {@code POST /v1/oauth/token}
+   * (RFC 8693). Needs no API key: the route never reads one, so a client made with any placeholder key
+   * works. {@code resource} is {@code org:<id>} or {@code site:<cbid>}; {@code expiresIn} may be null.
+   */
+  public Map<String, Object> exchangeOperatorToken(String subjectToken, List<String> scope, String resource, String subjectTokenType, Integer expiresIn) {
+    Map<String, Object> body = new java.util.LinkedHashMap<>();
+    body.put("grant_type", "urn:ietf:params:oauth:grant-type:token-exchange");
+    body.put("subject_token", subjectToken);
+    body.put("subject_token_type", "urn:ietf:params:oauth:token-type:" + (subjectTokenType == null ? "access_token" : subjectTokenType));
+    body.put("scope", String.join(" ", scope));
+    body.put("resource", resource);
+    body.put("audience", "cookiemunch");
+    if (expiresIn != null) body.put("expires_in", expiresIn);
+    return client.requestMap("POST", "/v1/oauth/token", body);
   }
 
   /** Revoke a published secret — {@code POST /v1/keys/revoke_leaked}; always answers {@code received}. */

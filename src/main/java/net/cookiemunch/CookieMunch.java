@@ -54,6 +54,7 @@ public final class CookieMunch {
   private final PreferencesResource preferences;
   private final MembersResource members;
   private final KeysResource keys;
+  private final SandboxResource sandbox;
   private final WebhooksResource webhooks;
   private final BannersResource banners;
   private final IdentityResource identity;
@@ -106,6 +107,7 @@ public final class CookieMunch {
     this.preferences = new PreferencesResource(this);
     this.members = new MembersResource(this);
     this.keys = new KeysResource(this);
+    this.sandbox = new SandboxResource(this);
     this.webhooks = new WebhooksResource(this);
     this.banners = new BannersResource(this);
     this.identity = new IdentityResource(this);
@@ -236,6 +238,14 @@ public final class CookieMunch {
   }
 
   /**
+   * The dated API versions, what each changed, and the one this key is pinned to ({@code yours}) —
+   * {@code GET /v1/versions}. Re-pin with {@code keys().updateSelf(...)}.
+   */
+  public Map<String, Object> versions() {
+    return getMap("/v1/versions");
+  }
+
+  /**
    * Every link a site's privacy wiring depends on, one row each with {@code ok} (null = could not
    * check) and a {@code fixHint} — {@code GET /v1/integration-health}. {@code cbid} may be null
    * when the org has one site.
@@ -360,6 +370,11 @@ public final class CookieMunch {
 
   public KeysResource keys() {
     return keys;
+  }
+
+  /** The organisation's sandbox: a separate test organisation, never billed. */
+  public SandboxResource sandbox() {
+    return sandbox;
   }
 
   public WebhooksResource webhooks() {
