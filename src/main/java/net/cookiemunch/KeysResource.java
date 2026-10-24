@@ -75,4 +75,41 @@ public final class KeysResource {
     if (expiringDays != null) q.append(q.length() == 0 ? "?" : "&").append("expiringDays=").append(expiringDays);
     return client.getMap("/v1/keys/report" + q);
   }
+
+  /** The suite-standard listing — {@code GET /v1/keys?shape=standard}. */
+  public Map<String, Object> listStandard() {
+    return client.getMap("/v1/keys?shape=standard");
+  }
+
+  /** The calling key itself, with any key — {@code GET /v1/keys/self}. */
+  public Map<String, Object> self() {
+    return client.getMap("/v1/keys/self");
+  }
+
+  /**
+   * The calling key rotates itself — {@code POST /v1/keys/self/roll}. The old secret stops at once;
+   * build the client with an {@code Idempotency-Key} header so a lost answer replays.
+   */
+  public Map<String, Object> rollSelf() {
+    return client.requestMap("POST", "/v1/keys/self/roll", null);
+  }
+
+  /**
+   * A short-lived key (at most 12 hours) within this key's own scopes and properties —
+   * {@code POST /v1/keys/vend}. {@code opts} may carry {@code cbids} and {@code name}.
+   */
+  public Map<String, Object> vend(List<String> scopes, int ttlSeconds, Map<String, Object> opts) {
+    Map<String, Object> body = new java.util.LinkedHashMap<>(opts == null ? Map.of() : opts);
+    body.put("scopes", scopes);
+    body.put("ttlSeconds", ttlSeconds);
+    return client.requestMap("POST", "/v1/keys/vend", body);
+  }
+
+  /** Revoke a published secret — {@code POST /v1/keys/revoke_leaked}; always answers {@code received}. */
+  public Map<String, Object> revokeLeaked(String key, String source) {
+    Map<String, Object> body = new java.util.LinkedHashMap<>();
+    body.put("key", key);
+    if (source != null) body.put("source", source);
+    return client.requestMap("POST", "/v1/keys/revoke_leaked", body);
+  }
 }

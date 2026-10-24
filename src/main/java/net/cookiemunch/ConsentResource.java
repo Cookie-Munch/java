@@ -46,6 +46,15 @@ public final class ConsentResource {
     return client.getList(base(cbid) + "/consent/stats" + query, ConsentDay.class);
   }
 
+  /**
+   * Opt-in by region and A/B variant, and the decision rate — {@code GET /v1/sites/{cbid}/consent/insights}.
+   * Language and time-to-decision are not recorded (null). Either bound may be null.
+   */
+  public Map<String, Object> insights(String cbid, Long from, Long to) {
+    String query = new Query().add("from", from).add("to", to).toString();
+    return client.getMap(base(cbid) + "/consent/insights" + query);
+  }
+
   /** Recent anonymised consent records — {@code GET /v1/sites/{cbid}/consent/log}. */
   public List<ConsentLogRow> log(String cbid) {
     return log(cbid, null, null, null);
@@ -92,5 +101,14 @@ public final class ConsentResource {
   public SubjectExport exportSubject(String cbid, String stamp) {
     String query = new Query().add("stamp", stamp).toString();
     return client.request("GET", base(cbid) + "/subject-export" + query, null, SubjectExport.class);
+  }
+
+  /**
+   * The reserved categories (support_chat, referrals) a site switches on with categories.suite:
+   * stance, fallback, basis, wording in every banner language, known vendors. Public —
+   * {@code GET /v1/categories/registry}.
+   */
+  public Map<String, Object> categoryRegistry() {
+    return client.getMap("/v1/categories/registry");
   }
 }

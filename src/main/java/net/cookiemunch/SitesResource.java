@@ -35,6 +35,11 @@ public final class SitesResource {
     return client.getList("/v1/sites", Site.class);
   }
 
+  /** Sites with these tags — {@code GET /v1/sites?metadata[k]=v}. */
+  public List<Site> list(Map<String, String> metadata) {
+    return client.getList("/v1/sites" + Query.metadata(metadata), Site.class);
+  }
+
   /** Register a new site — {@code POST /v1/sites}. */
   public Site create(SiteCreate input) {
     return client.request("POST", "/v1/sites", input, Site.class);
@@ -68,6 +73,14 @@ public final class SitesResource {
   /** Delete a site — {@code DELETE /v1/sites/{cbid}}. */
   public void delete(String cbid) {
     client.requestVoid("DELETE", base(cbid), null);
+  }
+
+  /**
+   * Purge a SANDBOX site — {@code DELETE /v1/sites/{cbid}?hard=1}: its consent ledger, declarations and
+   * test rights requests too. Anything not created as a sandbox is 403 {@code not_a_sandbox}.
+   */
+  public Map<String, Object> deleteSandbox(String cbid) {
+    return client.requestMap("DELETE", base(cbid) + "?hard=1", null);
   }
 
   /** Partner links and the partner catalogue — {@code GET /v1/sites/{cbid}/partners}. */
@@ -261,6 +274,25 @@ public final class SitesResource {
     return client.requestMap("POST", base(cbid) + "/preview-token", body);
   }
 
+  /**
+   * The brand.json last imported for the site — {@code GET /v1/sites/{cbid}/brand}: each role, the
+   * theme token it sets, its {@code source} ({@code brand.json} or {@code site}), {@code ignored}
+   * and {@code warnings}.
+   */
+  public Map<String, Object> getBrand(String cbid) {
+    return client.requestMap("GET", base(cbid) + "/brand", null);
+  }
+
+  /**
+   * Import a DTCG brand.json into the banner theme and the rights page — {@code PUT
+   * /v1/sites/{cbid}/brand}. {@code input} is {@code {"url": "https://…"}} or the document. Values the
+   * site set itself are kept (brand.json &lt; site banner theme &lt; per-banner variant).
+   * {@code dryRun} saves nothing.
+   */
+  public Map<String, Object> setBrand(String cbid, Map<String, Object> input, boolean dryRun) {
+    return client.requestMap("PUT", base(cbid) + "/brand" + (dryRun ? "?dryRun=1" : ""), new java.util.LinkedHashMap<>(input));
+  }
+
   /** Suggest theme tokens from the site's homepage — {@code POST /v1/sites/{cbid}/brand}. */
   public BrandExtractionResult brand(String cbid) {
     return client.request("POST", base(cbid) + "/brand", Map.of(), BrandExtractionResult.class);
@@ -447,7 +479,7 @@ public final class SitesResource {
   }
 
   /**
-   * Every declaration preset (atlas, forumulate, chatly, cookiemunch, referally): parameters, what each
+   * Every declaration preset (atlas, forumulate, chatly, cookiemunch, referalli, firstpromoter, partnerstack, tapfiliate, impact): parameters, what each
    * declared on this site, and whether the vendor's manifest exists yet —
    * {@code GET /v1/sites/{cbid}/cookies/presets}.
    */
@@ -459,7 +491,7 @@ public final class SitesResource {
    * Apply (or re-sync) a vendor preset: declares what that platform writes, marked
    * {@code vendor} — {@code PUT /v1/sites/{cbid}/cookies/presets/{vendor}}. Atlas takes
    * {@code frontendApiHost}/{@code crossSubdomainCookies}; Chatly {@code publicId}/{@code dragging}/{@code category};
-   * Referally {@code cookieDomain}/{@code cookieDays}/{@code category}.
+   * referral presets {@code cookieDomain}/{@code cookieDays}/{@code category} (referalli {@code legacyName}, impact {@code campaignId}).
    */
   public Map<String, Object> applyCookiePreset(String cbid, String vendor, Map<String, Object> params) {
     return applyCookiePreset(cbid, vendor, params, false);
@@ -468,6 +500,28 @@ public final class SitesResource {
   /** {@link #applyCookiePreset(String, String, Map)}; with {@code dryRun} nothing is stored. */
   public Map<String, Object> applyCookiePreset(String cbid, String vendor, Map<String, Object> params, boolean dryRun) {
     return client.requestMap("PUT", base(cbid) + "/cookies/presets/" + Query.pathSegment(vendor) + (dryRun ? "?dryRun=1" : ""), params == null ? Map.of() : params);
+  }
+
+  /**
+   * Declare any vendor's cookies and storage from its embed manifest —
+   * {@code PUT /v1/sites/{cbid}/cookies/presets/custom} with {@code url} or {@code manifest} (and
+   * {@code params}). The vendor id is the manifest's {@code product}.
+   */
+  public Map<String, Object> importCookieManifest(String cbid, Map<String, Object> input, boolean dryRun) {
+    return client.requestMap("PUT", base(cbid) + "/cookies/presets/custom" + (dryRun ? "?dryRun=1" : ""), input == null ? Map.of() : input);
+  }
+
+  /** What to declare — {@code GET /v1/sites/{cbid}/cookies/suggestions}: detected vendors and one suggestion per undeclared row. */
+  public Map<String, Object> cookieSuggestions(String cbid) {
+    return client.requestMap("GET", base(cbid) + "/cookies/suggestions", null);
+  }
+
+  /**
+   * Declare the suggestions — {@code POST /v1/sites/{cbid}/cookies/suggestions/declare} with optional
+   * {@code names} and {@code presets}. Run with {@code dryRun} first.
+   */
+  public Map<String, Object> declareCookieSuggestions(String cbid, Map<String, Object> input, boolean dryRun) {
+    return client.requestMap("POST", base(cbid) + "/cookies/suggestions/declare" + (dryRun ? "?dryRun=1" : ""), input == null ? Map.of() : input);
   }
 
   /** Remove every declaration a vendor preset made — {@code DELETE /v1/sites/{cbid}/cookies/presets/{vendor}}. */

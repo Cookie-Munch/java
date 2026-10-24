@@ -22,6 +22,11 @@ public final class WebhooksResource {
     return client.getList("/v1/webhooks", WebhookSubscription.class);
   }
 
+  /** Subscriptions with these tags — {@code GET /v1/webhooks?metadata[k]=v}. */
+  public List<WebhookSubscription> list(Map<String, String> metadata) {
+    return client.getList("/v1/webhooks" + Query.metadata(metadata), WebhookSubscription.class);
+  }
+
   /** Create a webhook subscription (the secret is returned ONCE) — {@code POST /v1/webhooks}. */
   public WebhookSubscription create(WebhookCreate input) {
     return client.request("POST", "/v1/webhooks", input, WebhookSubscription.class);
@@ -59,5 +64,13 @@ public final class WebhooksResource {
   /** Deliver a dead letter again, to the subscription as it is now — {@code POST /v1/webhooks/dead-letters/{id}/replay}. */
   public Map<String, Object> replayDeadLetter(String id) {
     return client.requestMap("POST", "/v1/webhooks/dead-letters/" + Query.pathSegment(id) + "/replay", null);
+  }
+
+  /**
+   * Send what a failing or disabled endpoint missed since {@code since} (epoch ms or ISO date), oldest
+   * first, stopping at the first failure — {@code POST /v1/webhooks/{id}/replay}. limit may be null.
+   */
+  public Map<String, Object> replay(String id, String since, Integer limit) {
+    return client.requestMap("POST", "/v1/webhooks/" + Query.pathSegment(id) + "/replay" + new Query().add("since", since).add("limit", limit), null);
   }
 }

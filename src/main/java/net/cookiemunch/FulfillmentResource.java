@@ -35,6 +35,14 @@ public final class FulfillmentResource {
   }
 
   /**
+   * One connection with its full profile, never its credentials. Read it before changing the
+   * profile: {@code updateExecutor} replaces the whole profile.
+   */
+  public Map<String, Object> executor(String id) {
+    return client.getMap("/v1/dsar/executors/" + Query.pathSegment(id));
+  }
+
+  /**
    * Connect one. {@code profile} describes that system's API — paths, the words it uses for
    * export and erase, its status vocabulary, how it signs webhooks — so connecting a new
    * platform needs no code. The secret is stored encrypted and never returned; the response
@@ -124,6 +132,8 @@ public final class FulfillmentResource {
    * Change a connection in place — {@code PATCH /v1/dsar/executors/{id}}. {@code patch} is sent
    * as-is: only the keys present change, the credential is kept unless {@code secretKey} is
    * given, and {@code "webhookSecret" -> null} removes it (nulls are kept for this call).
+   * {@code "label"} names the credential ({@code null} removes it); {@code "presetPinned" -> true}
+   * stops {@link #upgradeExecutorPreset} changing a preset-built connection.
    */
   public Map<String, Object> updateExecutor(String id, Map<String, Object> patch) {
     return client.requestMapKeepingNulls("PATCH", "/v1/dsar/executors/" + Query.pathSegment(id), new LinkedHashMap<>(patch));
@@ -156,6 +166,22 @@ public final class FulfillmentResource {
    */
   public List<Map<String, Object>> executorWebhookDeliveries(String id) {
     return client.getListOfMaps("/v1/dsar/executors/" + Query.pathSegment(id) + "/webhook/deliveries");
+  }
+
+  /**
+   * Re-check a connection now: a canary test that records its health, for a deploy pipeline —
+   * {@code POST /v1/dsar/executors/{id}/recheck}.
+   */
+  public Map<String, Object> recheckExecutor(String id) {
+    return client.requestMap("POST", "/v1/dsar/executors/" + Query.pathSegment(id) + "/recheck", new LinkedHashMap<>());
+  }
+
+  /**
+   * A connection's last health checks, newest first — {@code GET /v1/dsar/executors/{id}/health/history}.
+   * {@code limit} (1 to 50) may be null for the default.
+   */
+  public List<Map<String, Object>> executorHealthHistory(String id, Integer limit) {
+    return client.getListOfMaps("/v1/dsar/executors/" + Query.pathSegment(id) + "/health/history" + new Query().add("limit", limit));
   }
 
   /**
@@ -215,5 +241,15 @@ public final class FulfillmentResource {
     body.put("ok", ok);
     if (error != null) body.put("error", error);
     return client.requestMap("POST", "/v1/dsar/agent/tasks/" + Query.pathSegment(taskId) + "/result", body);
+  }
+
+  /** Run the cm-standard-v2 conformance kit on the canary subject only: {@code POST /v1/dsar/executors/{id}/test {conformance: true}}. */
+  public Map<String, Object> executorConformance(String id) {
+    return client.requestMap("POST", "/v1/dsar/executors/" + Query.pathSegment(id) + "/test", Map.of("conformance", true));
+  }
+
+  /** A new completion secret, shown once; the old one keeps verifying for 24 hours: {@code POST /v1/dsar/executors/{id}/completion-secret/roll}. */
+  public Map<String, Object> rollExecutorCompletionSecret(String id) {
+    return client.requestMap("POST", "/v1/dsar/executors/" + Query.pathSegment(id) + "/completion-secret/roll", null);
   }
 }

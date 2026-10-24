@@ -39,6 +39,8 @@ public final class CookieMunch {
   private final String baseUrl;
   private final String userAgent;
   private final boolean strictUnknownFields;
+  private final String secretRecipient;
+  private final Map<String, String> extraHeaders;
   private final HttpTransport transport;
   private final Json json = new Json();
 
@@ -70,8 +72,12 @@ public final class CookieMunch {
   private final ConsentSyncSecretResource consentSyncSecret;
   private final PreferenceCenterResource preferenceCenter;
   private final RightsIdentityResource rightsIdentity;
+  private final DsarSettingsResource dsarSettings;
+  private final IntegrationsResource integrations;
   private final OrgResource org;
   private final AssetsResource assets;
+  private final MetadataResource metadata;
+  private final PartnerLinksResource partnerLinks;
 
   /** Create a client for the default base URL, authenticating with {@code apiKey}. */
   public CookieMunch(String apiKey) {
@@ -86,6 +92,8 @@ public final class CookieMunch {
     this.baseUrl = trimTrailingSlash(b.baseUrl == null ? DEFAULT_BASE_URL : b.baseUrl);
     this.userAgent = b.userAgent;
     this.strictUnknownFields = b.strictUnknownFields;
+    this.secretRecipient = b.secretRecipient;
+    this.extraHeaders = new LinkedHashMap<>(b.headers);
     this.transport = b.transport != null ? b.transport : new JdkHttpTransport();
 
     this.sites = new SitesResource(this);
@@ -116,8 +124,22 @@ public final class CookieMunch {
     this.consentSyncSecret = new ConsentSyncSecretResource(this);
     this.preferenceCenter = new PreferenceCenterResource(this);
     this.rightsIdentity = new RightsIdentityResource(this);
+    this.dsarSettings = new DsarSettingsResource(this);
+    this.integrations = new IntegrationsResource(this);
     this.org = new OrgResource(this);
     this.assets = new AssetsResource(this);
+    this.metadata = new MetadataResource(this);
+    this.partnerLinks = new PartnerLinksResource(this);
+  }
+
+  /** Tags on created resources — {@code /v1/metadata/{type}/{id}}. */
+  public MetadataResource metadata() {
+    return metadata;
+  }
+
+  /** Suite-standard partner links — {@code /v1/partner_links}. */
+  public PartnerLinksResource partnerLinks() {
+    return partnerLinks;
   }
 
   /** Start building a client, overriding base URL, transport, or user agent. */
@@ -155,6 +177,43 @@ public final class CookieMunch {
   }
 
   /**
+   * {@link #createOrg(String)} with options: {@code mintKey}, {@code keyScopes} (required for an
+   * {@code orgs:create} key), {@code keyExpiresInDays} (default 365), {@code keyOwner},
+   * {@code externalRef}, {@code metadata}.
+   */
+  public Map<String, Object> createOrg(String name, Map<String, Object> opts) {
+    Map<String, Object> body = new LinkedHashMap<>(opts == null ? Map.of() : opts);
+    body.put("name", name);
+    return requestMap("POST", "/v1/orgs", body);
+  }
+
+  /** {@link #listOrgs()} keeping only organisations with these tags — {@code GET /v1/orgs?metadata[k]=v}. */
+  public Map<String, Object> listOrgs(Map<String, String> metadata) {
+    return requestMap("GET", "/v1/orgs" + Query.metadata(metadata), null);
+  }
+
+  /**
+   * Remove a SANDBOX organisation of this account — {@code DELETE /v1/orgs/{id}?hard=1}. Anything not
+   * created with {@code metadata.forgedeck_sandbox} is 403 {@code not_a_sandbox}.
+   */
+  public Map<String, Object> deleteSandboxOrg(String id) {
+    return requestMap("DELETE", "/v1/orgs/" + Query.pathSegment(id) + "?hard=1", null);
+  }
+
+  /**
+   * What {@code forgedeck env} writes for the product provisioned with this ref —
+   * {@code GET /v1/provision/env}: names, non-secret values, and references for secrets.
+   */
+  public Map<String, Object> provisionEnv(String ref) {
+    return getMap("/v1/provision/env" + new Query().add("ref", ref));
+  }
+
+  /** {@link #provision(Map, boolean)} resuming from a stable step id (version 2 body). */
+  public Map<String, Object> provision(Map<String, Object> input, boolean dryRun, String fromStep) {
+    return requestMap("POST", "/v1/provision" + new Query().add("dryRun", dryRun ? "1" : null).add("fromStep", fromStep), input);
+  }
+
+  /**
    * The languages the banner already has copy for — {@code GET /v1/languages}. Diff it
    * against your visitors' locales to find the ones you still have to write.
    */
@@ -168,12 +227,30 @@ public final class CookieMunch {
   }
 
   /**
+   * What the org may use, from its plan — {@code GET /v1/entitlements}: every feature as
+   * {@code {key, enabled}} and every limit as {@code limits.<name>} with {@code limit} (null =
+   * unlimited) and {@code used} where metered. Any key may read it.
+   */
+  public Map<String, Object> entitlements() {
+    return getMap("/v1/entitlements");
+  }
+
+  /**
    * Every link a site's privacy wiring depends on, one row each with {@code ok} (null = could not
    * check) and a {@code fixHint} — {@code GET /v1/integration-health}. {@code cbid} may be null
    * when the org has one site.
    */
   public Map<String, Object> integrationHealth(String cbid) {
     return getMap("/v1/integration-health" + (cbid == null ? "" : "?cbid=" + Query.encode(cbid)));
+  }
+
+  /**
+   * The site's embed manifest — {@code GET /v1/embed?cbid=}, the tenant variant of
+   * {@code /.well-known/forgedeck-embed.json}: every origin by CSP directive and every browser key
+   * the embed writes for this site's config. Public: no key is needed.
+   */
+  public Map<String, Object> embedManifest(String cbid) {
+    return getMap("/v1/embed?cbid=" + Query.encode(cbid));
   }
 
   /**
@@ -192,6 +269,44 @@ public final class CookieMunch {
    */
   public Map<String, Object> audit(Integer limit) {
     return getMap("/v1/audit" + new Query().add("limit", limit));
+  }
+
+  /**
+   * One actor's audit rows — {@code GET /v1/audit?actor=}. {@code "self"} is the calling key's own
+   * rows, the one form a scoped or property-locked key may read.
+   */
+  public Map<String, Object> audit(Integer limit, String actor) {
+    return getMap("/v1/audit" + new Query().add("limit", limit).add("actor", actor));
+  }
+
+  /** Where the audit log is streamed as CloudEvents (never the secret) — {@code GET /v1/audit/sink}. */
+  public Map<String, Object> getAuditSink() {
+    return getMap("/v1/audit/sink");
+  }
+
+  /** Stream the audit log to an HTTPS endpoint — {@code PUT /v1/audit/sink {type: "webhook", url, secret?}}. */
+  public Map<String, Object> setAuditSink(Map<String, Object> input) {
+    return requestMap("PUT", "/v1/audit/sink", input);
+  }
+
+  /** Stop the audit-log export — {@code DELETE /v1/audit/sink}. */
+  public void removeAuditSink() {
+    requestMap("DELETE", "/v1/audit/sink", null);
+  }
+
+  /** The checks the org chose not to meet — {@code GET /v1/integration-health/waivers}. */
+  public Map<String, Object> healthWaivers(String cbid) {
+    return getMap("/v1/integration-health/waivers" + new Query().add("cbid", cbid));
+  }
+
+  /** Waive a check — {@code PUT /v1/integration-health/waivers {cbid?, check, subject?, reason, until?}}. Audited. */
+  public Map<String, Object> setHealthWaiver(Map<String, Object> input) {
+    return requestMap("PUT", "/v1/integration-health/waivers", input);
+  }
+
+  /** Remove a waiver — {@code DELETE /v1/integration-health/waivers}. cbid and subject may be null. */
+  public void removeHealthWaiver(String check, String cbid, String subject) {
+    requestMap("DELETE", "/v1/integration-health/waivers" + new Query().add("check", check).add("cbid", cbid).add("subject", subject), null);
   }
 
   /**
@@ -327,6 +442,16 @@ public final class CookieMunch {
     return rightsIdentity;
   }
 
+  /** A site's rights-request settings: graceDays (0-30; 7 for a new site, 0 until set for an existing one). Needs dsar:read / dsar:write. */
+  public DsarSettingsResource dsarSettings() {
+    return dsarSettings;
+  }
+
+  /** Cards for support, CRM and helpdesk sidebars. Needs dsar:read. */
+  public IntegrationsResource integrations() {
+    return integrations;
+  }
+
   /** The key's organisation. Requires an unscoped key that is not property-locked. */
   public OrgResource org() {
     return org;
@@ -363,6 +488,11 @@ public final class CookieMunch {
     return json.readMap(exchange(method, path, body));
   }
 
+  /** As {@link #requestMap}, with extra request headers (e.g. Idempotency-Key). */
+  Map<String, Object> requestMapWithHeaders(String method, String path, Object body, Map<String, String> extra) {
+    return json.readMap(exchange(method, path, body, extra));
+  }
+
   /** As {@link #requestMap}, but a null value in {@code body} is sent as JSON null. */
   Map<String, Object> requestMapKeepingNulls(String method, String path, Map<String, Object> body) {
     return json.readMap(exchange(method, path, json.keepingNulls(body)));
@@ -381,6 +511,10 @@ public final class CookieMunch {
    * (empty string for a 204). Non-2xx responses raise {@link CookieMunchApiException}.
    */
   private String exchange(String method, String path, Object body) {
+    return exchange(method, path, body, Map.of());
+  }
+
+  private String exchange(String method, String path, Object body, Map<String, String> extra) {
     Map<String, String> headers = new LinkedHashMap<>();
     headers.put("Authorization", "Bearer " + apiKey);
     headers.put("X-API-Key", apiKey);
@@ -388,9 +522,14 @@ public final class CookieMunch {
     if (strictUnknownFields && !"GET".equals(method)) {
       headers.put("Prefer", "strict-unknown-fields");
     }
+    if (secretRecipient != null && !"GET".equals(method)) {
+      headers.put("X-Secret-Recipient", secretRecipient);
+    }
+    headers.putAll(extraHeaders);
     if (userAgent != null && !userAgent.isEmpty()) {
       headers.put("User-Agent", userAgent);
     }
+    headers.putAll(extra);
 
     String payload = null;
     if (body != null) {
@@ -447,6 +586,8 @@ public final class CookieMunch {
     private String userAgent = DEFAULT_USER_AGENT;
     private HttpTransport transport;
     private boolean strictUnknownFields;
+    private String secretRecipient;
+    private final Map<String, String> headers = new LinkedHashMap<>();
 
     Builder(String apiKey) {
       this.apiKey = apiKey;
@@ -475,6 +616,21 @@ public final class CookieMunch {
      */
     public Builder strictUnknownFields(boolean strict) {
       this.strictUnknownFields = strict;
+      return this;
+    }
+
+    /**
+     * Seal every once-shown secret to this X25519 public key ({@code x25519:<base64>}): answers carry
+     * {@code sealed_secret} instead of the plaintext.
+     */
+    public Builder secretRecipient(String recipient) {
+      this.secretRecipient = recipient;
+      return this;
+    }
+
+    /** An extra header on every request, e.g. {@code header("Idempotency-Key", ref + ":" + run)}. */
+    public Builder header(String name, String value) {
+      this.headers.put(name, value);
       return this;
     }
 

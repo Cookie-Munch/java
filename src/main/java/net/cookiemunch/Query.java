@@ -39,6 +39,16 @@ final class Query {
     return URLEncoder.encode(value, StandardCharsets.UTF_8);
   }
 
+  /** {@code ?metadata[k]=v&...} tag filters for list endpoints; empty for none. */
+  static String metadata(java.util.Map<String, String> metadata) {
+    if (metadata == null || metadata.isEmpty()) return "";
+    StringBuilder out = new StringBuilder();
+    for (java.util.Map.Entry<String, String> e : metadata.entrySet()) {
+      out.append(out.length() == 0 ? '?' : '&').append("metadata%5B").append(encode(e.getKey())).append("%5D=").append(encode(e.getValue()));
+    }
+    return out.toString();
+  }
+
   /** Encode a single URL path segment (spaces as {@code %20}, slashes escaped). */
   static String pathSegment(String value) {
     return URLEncoder.encode(value, StandardCharsets.UTF_8).replace("+", "%20");

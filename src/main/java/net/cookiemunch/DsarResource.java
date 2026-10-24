@@ -90,4 +90,40 @@ public final class DsarResource {
     String path = "/v1/dsar/" + Query.pathSegment(id) + "/export";
     return client.request("POST", path, Map.of("cbid", cbid, "stamp", stamp), DsarExportResult.class);
   }
+
+  /** The request carrying one X-ForgeDeck-Trace: {@code GET /v1/dsar?trace=}. */
+  public java.util.List<Map<String, Object>> listByTrace(String trace) {
+    return client.getListOfMaps("/v1/dsar" + new Query().add("trace", trace));
+  }
+
+  /**
+   * Open a case fanned out to every connected system: {@code POST /v1/dsar/requests}. {@code input} keys:
+   * {@code cbid}, {@code type} (access, deletion, closure, restriction, rectification, or an alias:
+   * erasure, erase, export), {@code subject} ({@code {emails, identity: {iss, sub, ext, principal}}}),
+   * {@code subjectToken}, {@code source} (product or atlas attest the person and need dsar:write; admin
+   * files it received), {@code reason}, {@code skipSystems}, {@code fulfill}, {@code test}.
+   * {@code idempotencyKey} (16-128 chars) makes a retry answer the same case; {@code trace} is kept.
+   * Either may be null.
+   */
+  public Map<String, Object> openCase(Map<String, Object> input, String idempotencyKey, String trace) {
+    Map<String, String> headers = new java.util.LinkedHashMap<>();
+    if (idempotencyKey != null) headers.put("Idempotency-Key", idempotencyKey);
+    if (trace != null) headers.put("X-ForgeDeck-Trace", trace);
+    return client.requestMapWithHeaders("POST", "/v1/dsar/requests", new java.util.LinkedHashMap<>(input), headers);
+  }
+
+  /** One case across every system: {@code GET /v1/dsar/requests/{id}}. */
+  public Map<String, Object> getCase(String id) {
+    return client.getMap("/v1/dsar/requests/" + Query.pathSegment(id));
+  }
+
+  /** Cancel a case before executeAfter: {@code POST /v1/dsar/requests/{id}/cancel}. Every system keeps its data. */
+  public Map<String, Object> cancelCase(String id) {
+    return client.requestMap("POST", "/v1/dsar/requests/" + Query.pathSegment(id) + "/cancel", null);
+  }
+
+  /** The signed (Ed25519) receipt for a case: {@code GET /v1/dsar/requests/{id}/receipt}. */
+  public Map<String, Object> caseReceipt(String id) {
+    return client.getMap("/v1/dsar/requests/" + Query.pathSegment(id) + "/receipt");
+  }
 }

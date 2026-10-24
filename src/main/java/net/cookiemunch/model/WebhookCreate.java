@@ -4,7 +4,7 @@ import java.util.List;
 
 /**
  * Body of {@code POST /v1/webhooks}. {@code events} are drawn from
- * {@code consent.recorded, scan.completed, scan.cookies_changed, dsar.created,
+ * {@code consent.recorded, scan.completed, scan.cookies_changed, preset.manifest_changed, dsar.created,
  * dsar.updated, banner.published}. {@code cbid} is an optional property filter
  * ({@code null}/omitted = all properties).
  */
