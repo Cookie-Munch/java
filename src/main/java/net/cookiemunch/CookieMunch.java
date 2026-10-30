@@ -196,14 +196,14 @@ public final class CookieMunch {
 
   /**
    * Remove a SANDBOX organisation of this account — {@code DELETE /v1/orgs/{id}?hard=1}. Anything not
-   * created with {@code metadata.forgedeck_sandbox} is 403 {@code not_a_sandbox}.
+   * created with {@code metadata.stack_sandbox} is 403 {@code not_a_sandbox}.
    */
   public Map<String, Object> deleteSandboxOrg(String id) {
     return requestMap("DELETE", "/v1/orgs/" + Query.pathSegment(id) + "?hard=1", null);
   }
 
   /**
-   * What {@code forgedeck env} writes for the product provisioned with this ref —
+   * What {@code env} writes for the product provisioned with this ref —
    * {@code GET /v1/provision/env}: names, non-secret values, and references for secrets.
    */
   public Map<String, Object> provisionEnv(String ref) {
@@ -256,7 +256,7 @@ public final class CookieMunch {
 
   /**
    * The site's embed manifest — {@code GET /v1/embed?cbid=}, the tenant variant of
-   * {@code /.well-known/forgedeck-embed.json}: every origin by CSP directive and every browser key
+   * {@code /.well-known/cookiemunch-embed.json}: every origin by CSP directive and every browser key
    * the embed writes for this site's config. Public: no key is needed.
    */
   public Map<String, Object> embedManifest(String cbid) {

@@ -84,7 +84,9 @@ public final class FulfillmentResource {
    * {@code chatly}. {@code options} holds those and {@code presetVersion}, {@code webhookSecret},
    * {@code auto}, {@code cbid}; it may be null. The response carries {@code presetVersion} and
    * {@code presetDiff}. A preset waiting on another platform's API is refused with 409
-   * {@code preset_waiting_on_platform}; see {@link #executorPresets}.
+   * {@code preset_waiting_on_platform}; see {@link #executorPresets}. A null {@code secretKey} with
+   * {@code mintFrom} in {@code options} (a partner id that registered an executorKeyUrl) has that partner
+   * mint the key for the site under its link; {@code externalId} names the partner account.
    */
   public Map<String, Object> connectExecutorPreset(String preset, String secretKey, Map<String, Object> options) {
     return client.requestMap("POST", "/v1/dsar/executors", presetBody(preset, secretKey, options));
@@ -98,7 +100,7 @@ public final class FulfillmentResource {
   private static Map<String, Object> presetBody(String preset, String secretKey, Map<String, Object> options) {
     Map<String, Object> body = new LinkedHashMap<>();
     body.put("preset", preset);
-    body.put("secretKey", secretKey);
+    if (secretKey != null) body.put("secretKey", secretKey);
     if (options != null) body.putAll(options);
     return body;
   }

@@ -19,7 +19,7 @@ public final class MetadataResource {
 
   /**
    * Merge tags (a null value removes one) — {@code PATCH /v1/metadata/{type}/{id}}. Nulls are kept on
-   * the wire. {@code forgedeck_sandbox} cannot be set here.
+   * the wire. {@code stack_sandbox} cannot be set here.
    */
   public Map<String, Object> update(String type, String id, Map<String, Object> metadata, boolean dryRun) {
     Map<String, Object> body = new LinkedHashMap<>();

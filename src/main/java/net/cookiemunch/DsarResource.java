@@ -91,7 +91,7 @@ public final class DsarResource {
     return client.request("POST", path, Map.of("cbid", cbid, "stamp", stamp), DsarExportResult.class);
   }
 
-  /** The request carrying one X-ForgeDeck-Trace: {@code GET /v1/dsar?trace=}. */
+  /** The request carrying one X-Trace-Id: {@code GET /v1/dsar?trace=}. */
   public java.util.List<Map<String, Object>> listByTrace(String trace) {
     return client.getListOfMaps("/v1/dsar" + new Query().add("trace", trace));
   }
@@ -108,7 +108,7 @@ public final class DsarResource {
   public Map<String, Object> openCase(Map<String, Object> input, String idempotencyKey, String trace) {
     Map<String, String> headers = new java.util.LinkedHashMap<>();
     if (idempotencyKey != null) headers.put("Idempotency-Key", idempotencyKey);
-    if (trace != null) headers.put("X-ForgeDeck-Trace", trace);
+    if (trace != null) headers.put("X-Trace-Id", trace);
     return client.requestMapWithHeaders("POST", "/v1/dsar/requests", new java.util.LinkedHashMap<>(input), headers);
   }
 
