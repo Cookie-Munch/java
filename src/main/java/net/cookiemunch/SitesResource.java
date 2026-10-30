@@ -490,7 +490,7 @@ public final class SitesResource {
   /**
    * Apply (or re-sync) a vendor preset: declares what that platform writes, marked
    * {@code vendor} — {@code PUT /v1/sites/{cbid}/cookies/presets/{vendor}}. Atlas takes
-   * {@code frontendApiHost}/{@code crossSubdomainCookies}; Chatly {@code publicId}/{@code dragging}/{@code category};
+   * {@code frontendApiHost}/{@code crossSubdomainCookies}/{@code publishableKey}; Chatly {@code publicId}/{@code dragging}/{@code storage}/{@code tracking}/{@code category};
    * referral presets {@code cookieDomain}/{@code cookieDays}/{@code category} (referalli {@code legacyName}, impact {@code campaignId}).
    */
   public Map<String, Object> applyCookiePreset(String cbid, String vendor, Map<String, Object> params) {
