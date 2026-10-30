@@ -24,4 +24,14 @@ public final class RegulatoryResource {
   public Map<String, Object> upcoming(Integer days) {
     return client.getMap("/v1/regulatory/upcoming" + new Query().add("days", days));
   }
+
+  /**
+   * What takes effect within {@code days} (null: 90) where at least {@code minShare} (null: 0.01)
+   * of the site's last 30 days of decisions came from —
+   * {@code GET /v1/sites/{cbid}/regulatory/upcoming}. Needs {@code sites:read}.
+   */
+  public Map<String, Object> upcomingForSite(String cbid, Integer days, Double minShare) {
+    return client.getMap("/v1/sites/" + Query.pathSegment(cbid) + "/regulatory/upcoming"
+        + new Query().add("days", days).add("minShare", minShare == null ? null : minShare.toString()));
+  }
 }
