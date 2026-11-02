@@ -152,6 +152,16 @@ public final class FulfillmentResource {
   }
 
   /**
+   * Create or update the connection for a system from the same body as a create —
+   * {@code PUT /v1/dsar/executors}. Re-running it changes nothing; a changed create-only field
+   * answers 409 {@code immutable_field} naming every such field. The answer carries
+   * {@code upserted}: {@code created} or {@code updated}.
+   */
+  public Map<String, Object> upsertExecutor(Map<String, Object> body) {
+    return client.requestMap("PUT", "/v1/dsar/executors", new LinkedHashMap<>(body));
+  }
+
+  /**
    * The connection as {@link #updateExecutor} would leave it, and a diff, changing nothing —
    * {@code PATCH /v1/dsar/executors/{id}?dryRun=1}.
    */
