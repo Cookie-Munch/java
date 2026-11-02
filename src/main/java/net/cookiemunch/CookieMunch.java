@@ -55,6 +55,7 @@ public final class CookieMunch {
   private final MembersResource members;
   private final KeysResource keys;
   private final SandboxResource sandbox;
+  private final AnchorsResource anchors;
   private final WebhooksResource webhooks;
   private final BannersResource banners;
   private final IdentityResource identity;
@@ -108,6 +109,7 @@ public final class CookieMunch {
     this.members = new MembersResource(this);
     this.keys = new KeysResource(this);
     this.sandbox = new SandboxResource(this);
+    this.anchors = new AnchorsResource(this);
     this.webhooks = new WebhooksResource(this);
     this.banners = new BannersResource(this);
     this.identity = new IdentityResource(this);
@@ -370,6 +372,11 @@ public final class CookieMunch {
 
   public KeysResource keys() {
     return keys;
+  }
+
+  /** Audit anchoring: signed receipts for the head of your own hash-chained log. */
+  public AnchorsResource anchors() {
+    return anchors;
   }
 
   /** The organisation's sandbox: a separate test organisation, never billed. */
