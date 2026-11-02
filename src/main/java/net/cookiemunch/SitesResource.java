@@ -524,6 +524,33 @@ public final class SitesResource {
     return client.requestMap("POST", base(cbid) + "/cookies/suggestions/declare" + (dryRun ? "?dryRun=1" : ""), input == null ? Map.of() : input);
   }
 
+  /** The site's own translation account — {@code GET /v1/sites/{cbid}/translation}: provider, key last four and fingerprint. Never the key. */
+  public Map<String, Object> translation(String cbid) {
+    return client.requestMap("GET", base(cbid) + "/translation", null);
+  }
+
+  /**
+   * Connect the site's own DeepL or Google Cloud Translation key — {@code PUT /v1/sites/{cbid}/translation}
+   * ({@code provider} "deepl" or "google"). Stored sealed, never returned. {@code verify} checks it first, sending no text.
+   */
+  public Map<String, Object> connectTranslation(String cbid, String provider, String key, boolean verify) {
+    return client.requestMap("PUT", base(cbid) + "/translation" + (verify ? "?verify=1" : ""), Map.of("provider", provider, "key", key));
+  }
+
+  /** Remove the site's translation key — {@code DELETE /v1/sites/{cbid}/translation}. Translations already stored stay. */
+  public Map<String, Object> disconnectTranslation(String cbid) {
+    return client.requestMap("DELETE", base(cbid) + "/translation", null);
+  }
+
+  /**
+   * Machine-translate the missing purposes of the site's own cookie rows on its connected account —
+   * {@code POST /v1/sites/{cbid}/cookies/translate} with optional {@code languages} and {@code names}.
+   * Never overwrites a row's text; {@code dryRun} calls no provider.
+   */
+  public Map<String, Object> translateCookies(String cbid, Map<String, Object> input, boolean dryRun) {
+    return client.requestMap("POST", base(cbid) + "/cookies/translate" + (dryRun ? "?dryRun=1" : ""), input == null ? Map.of() : input);
+  }
+
   /** Remove every declaration a vendor preset made — {@code DELETE /v1/sites/{cbid}/cookies/presets/{vendor}}. */
   public Map<String, Object> removeCookiePreset(String cbid, String vendor, boolean dryRun) {
     return client.requestMap("DELETE", base(cbid) + "/cookies/presets/" + Query.pathSegment(vendor) + (dryRun ? "?dryRun=1" : ""), null);

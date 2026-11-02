@@ -16,4 +16,6 @@ public record Site(
     /** The display name data subjects see; null when unset (the domain is shown). */
     String name,
     /** Other hosts serving the site: accepted consent origins, never verified claims. */
-    java.util.List<String> aliases) {}
+    java.util.List<String> aliases,
+    /** The last beacon from the domain or an alias (epoch ms, accurate to the hour); null before the first. */
+    Long lastSeenAt) {}

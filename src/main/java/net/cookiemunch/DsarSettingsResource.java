@@ -24,6 +24,15 @@ public final class DsarSettingsResource {
     return client.requestMap("PUT", path(cbid), Map.of("graceDays", graceDays));
   }
 
+  /**
+   * {@code PUT /v1/sites/{cbid}/dsar-settings}, changing only the keys given: {@code graceDays}, {@code processing} (this site is a
+   * processor: {@code {role: "processor", controllers: [...]}}, null clears) and {@code acceptForwardsFrom} (processors that may open
+   * cases here, null clears). A webhook {@code secret} is write-only. Null values are sent, so a key can be cleared.
+   */
+  public Map<String, Object> update(String cbid, Map<String, Object> settings) {
+    return client.requestMapKeepingNulls("PUT", path(cbid), new java.util.LinkedHashMap<>(settings));
+  }
+
   private static String path(String cbid) {
     return "/v1/sites/" + Query.pathSegment(cbid) + "/dsar-settings";
   }
