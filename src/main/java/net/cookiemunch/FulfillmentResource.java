@@ -92,6 +92,16 @@ public final class FulfillmentResource {
     return client.requestMap("POST", "/v1/dsar/executors", presetBody(preset, secretKey, options));
   }
 
+  /**
+   * {@link #connectExecutorPreset} probed before it is stored ({@code ?verify=}): a canary locate,
+   * never an erasure. {@code "1"} refuses a failing connection (422 {@code verify_failed}, nothing
+   * stored); {@code "warn"} stores it with the verdict in {@code warnings}. {@code options} may carry
+   * {@code requireApproval: true}, which parks its erasures until {@link #approveTask}.
+   */
+  public Map<String, Object> connectExecutorPreset(String preset, String secretKey, Map<String, Object> options, String verify) {
+    return client.requestMap("POST", "/v1/dsar/executors" + new Query().add("verify", verify), presetBody(preset, secretKey, options));
+  }
+
   /** {@link #connectExecutorPreset} validated in full with nothing stored ({@code ?dryRun=1}). */
   public Map<String, Object> dryRunConnectExecutorPreset(String preset, String secretKey, Map<String, Object> options) {
     return client.requestMap("POST", "/v1/dsar/executors?dryRun=1", presetBody(preset, secretKey, options));
@@ -219,6 +229,23 @@ public final class FulfillmentResource {
    */
   public Map<String, Object> task(String requestId, String taskId) {
     return client.getMap("/v1/dsar/" + Query.pathSegment(requestId) + "/tasks/" + Query.pathSegment(taskId));
+  }
+
+  /** Send an erasure that was awaiting approval — {@code POST /v1/dsar/{id}/tasks/{taskId}/approve}. Audited. */
+  public Map<String, Object> approveTask(String requestId, String taskId) {
+    return client.requestMap(
+        "POST", "/v1/dsar/" + Query.pathSegment(requestId) + "/tasks/" + Query.pathSegment(taskId) + "/approve", new LinkedHashMap<>());
+  }
+
+  /**
+   * Refuse it — {@code POST /v1/dsar/{id}/tasks/{taskId}/reject}: nothing is sent and the task
+   * fails with {@code reason} (null for none). Audited.
+   */
+  public Map<String, Object> rejectTask(String requestId, String taskId, String reason) {
+    Map<String, Object> body = new LinkedHashMap<>();
+    if (reason != null) body.put("reason", reason);
+    return client.requestMap(
+        "POST", "/v1/dsar/" + Query.pathSegment(requestId) + "/tasks/" + Query.pathSegment(taskId) + "/reject", body);
   }
 
   /** Disconnect a system; its open sub-tasks stop being driven. */

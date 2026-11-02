@@ -97,6 +97,14 @@ public final class DsarResource {
   }
 
   /**
+   * The requests with one origin — {@code GET /v1/dsar?origin=}. {@code account_deletion}: those
+   * a person's own account deletion opened.
+   */
+  public java.util.List<Map<String, Object>> listByOrigin(String origin) {
+    return client.getListOfMaps("/v1/dsar" + new Query().add("origin", origin));
+  }
+
+  /**
    * Open a case fanned out to every connected system: {@code POST /v1/dsar/requests}. {@code input} keys:
    * {@code cbid}, {@code type} (access, deletion, closure, restriction, rectification, or an alias:
    * erasure, erase, export), {@code subject} ({@code {emails, identity: {iss, sub, ext, principal}}}),

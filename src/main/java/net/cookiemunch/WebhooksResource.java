@@ -27,7 +27,7 @@ public final class WebhooksResource {
     return client.getList("/v1/webhooks" + Query.metadata(metadata), WebhookSubscription.class);
   }
 
-  /** Create a webhook subscription (the secret is returned ONCE) — {@code POST /v1/webhooks}. */
+  /** Create a webhook subscription (a generated secret is returned ONCE; one you chose is not) — {@code POST /v1/webhooks}. */
   public WebhookSubscription create(WebhookCreate input) {
     return client.request("POST", "/v1/webhooks", input, WebhookSubscription.class);
   }
@@ -49,6 +49,11 @@ public final class WebhooksResource {
   /** Rotate the signing secret — {@code POST /v1/webhooks/{id}/roll}. The new secret is returned ONCE. */
   public WebhookSecret rollSecret(String id) {
     return client.request("POST", "/v1/webhooks/" + Query.pathSegment(id) + "/roll", null, WebhookSecret.class);
+  }
+
+  /** Rotate the signing secret to one you chose (32–256 printable characters); the answer has {@code rolled}, not the secret. */
+  public WebhookSecret rollSecret(String id, String secret) {
+    return client.request("POST", "/v1/webhooks/" + Query.pathSegment(id) + "/roll", Map.of("secret", secret), WebhookSecret.class);
   }
 
   /** Send a signed test event now and report what the endpoint answered — {@code POST /v1/webhooks/{id}/test}. */
