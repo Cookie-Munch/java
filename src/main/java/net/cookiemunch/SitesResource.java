@@ -524,6 +524,15 @@ public final class SitesResource {
     return client.requestMap("POST", base(cbid) + "/cookies/suggestions/declare" + (dryRun ? "?dryRun=1" : ""), input == null ? Map.of() : input);
   }
 
+  /**
+   * Plan a provisioning run, storing nothing — {@code POST /v1/sites/{cbid}/cookies/plan} with optional
+   * {@code cookies}, {@code replace} and {@code presets} (vendor → params): the declarations PUT, then each
+   * preset in key order, against one scratch copy. Answers {@code dryRun, steps, declared, count, diff}.
+   */
+  public Map<String, Object> planCookies(String cbid, Map<String, Object> input) {
+    return client.requestMap("POST", base(cbid) + "/cookies/plan", input == null ? Map.of() : input);
+  }
+
   /** The site's own translation account — {@code GET /v1/sites/{cbid}/translation}: provider, key last four and fingerprint. Never the key. */
   public Map<String, Object> translation(String cbid) {
     return client.requestMap("GET", base(cbid) + "/translation", null);
