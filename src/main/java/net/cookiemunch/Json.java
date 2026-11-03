@@ -62,7 +62,7 @@ final class Json {
 
   <T> List<T> readList(String body, Class<T> element) {
     try {
-      return mapper.readValue(body, mapper.getTypeFactory().constructCollectionType(List.class, element));
+      return mapper.readValue(listBody(body), mapper.getTypeFactory().constructCollectionType(List.class, element));
     } catch (JsonProcessingException e) {
       throw new CookieMunchException("cookiemunch: failed to decode response", e);
     }
@@ -71,7 +71,7 @@ final class Json {
   List<Map<String, Object>> readListOfMaps(String body) {
     try {
       return mapper.readValue(
-          body,
+          listBody(body),
           mapper.getTypeFactory().constructCollectionType(
               List.class,
               mapper.getTypeFactory().constructMapType(Map.class, String.class, Object.class)));
@@ -90,6 +90,25 @@ final class Json {
   }
 
   /** Parse to a tree, returning {@code null} on any failure (used for best-effort error bodies). */
+  /**
+   * From API version 2026-11-03 a list answers {@code {"data": [...]}} (plus {@code next}); a list read
+   * takes the array either way.
+   */
+  String listBody(String body) {
+    JsonNode node = readTreeQuiet(body);
+    if (node == null || !node.isObject() || node.get("data") == null || !node.get("data").isArray()) {
+      return body;
+    }
+    var names = node.fieldNames();
+    while (names.hasNext()) {
+      String n = names.next();
+      if (!n.equals("data") && !n.equals("next")) {
+        return body;
+      }
+    }
+    return node.get("data").toString();
+  }
+
   JsonNode readTreeQuiet(String body) {
     try {
       return mapper.readTree(body);

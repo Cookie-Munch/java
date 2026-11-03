@@ -107,6 +107,16 @@ class CookieMunchTest {
   }
 
   @Test
+  void listReadsTakeTheDataEnvelope() {
+    FakeTransport transport = new FakeTransport();
+    transport.reply(200, "{\"data\":[{\"cbid\":\"cb_1\",\"orgId\":\"org_1\",\"domain\":\"example.com\",\"verified\":true}],\"next\":\"1\"}");
+    List<Site> sites = clientWith(transport).sites().list();
+    assertEquals(1, sites.size());
+    assertEquals("cb_1", sites.get(0).cbid());
+    assertEquals("{\"data\":[],\"total\":0}", new Json().listBody("{\"data\":[],\"total\":0}"));
+  }
+
+  @Test
   void postsConsentIngestToPublicEndpoint() {
     FakeTransport transport = new FakeTransport();
     transport.reply(204, ""); // the real endpoint returns 204 with no body
