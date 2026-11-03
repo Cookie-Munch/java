@@ -479,7 +479,7 @@ public final class SitesResource {
   }
 
   /**
-   * Every declaration preset (atlas, forumulate, chatly, cookiemunch, referalli, firstpromoter, partnerstack, tapfiliate, impact): parameters, what each
+   * Every declaration preset (atlas, forumulate, chatly, cookiemunch, referalli, firstpromoter, partnerstack, tapfiliate, impact, seolyticize): parameters, what each
    * declared on this site, and whether the vendor's manifest exists yet —
    * {@code GET /v1/sites/{cbid}/cookies/presets}.
    */
