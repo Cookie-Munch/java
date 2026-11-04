@@ -560,6 +560,15 @@ public final class SitesResource {
     return client.requestMap("POST", base(cbid) + "/cookies/translate" + (dryRun ? "?dryRun=1" : ""), input == null ? Map.of() : input);
   }
 
+  /**
+   * Machine-translate the site's own banner and category copy into the {@code i18n.overrides}
+   * languages it lacks, on its connected account — {@code POST /v1/sites/{cbid}/config/translate}
+   * with optional {@code languages}. Never overwrites a person's text; {@code dryRun} calls no provider.
+   */
+  public Map<String, Object> translateConfig(String cbid, Map<String, Object> input, boolean dryRun) {
+    return client.requestMap("POST", base(cbid) + "/config/translate" + (dryRun ? "?dryRun=1" : ""), input == null ? Map.of() : input);
+  }
+
   /** Remove every declaration a vendor preset made — {@code DELETE /v1/sites/{cbid}/cookies/presets/{vendor}}. */
   public Map<String, Object> removeCookiePreset(String cbid, String vendor, boolean dryRun) {
     return client.requestMap("DELETE", base(cbid) + "/cookies/presets/" + Query.pathSegment(vendor) + (dryRun ? "?dryRun=1" : ""), null);
