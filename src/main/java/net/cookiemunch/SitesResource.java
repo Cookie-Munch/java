@@ -183,6 +183,14 @@ public final class SitesResource {
     return client.request("POST", base(cbid) + "/scan", null, ScanStatus.class);
   }
 
+  /**
+   * A signed-in crawl: {@code cookies} is a test account's Cookie header value
+   * ({@code "sid=abc; csrf=def"}), set only on the site's own hosts and never stored or returned.
+   */
+  public ScanStatus scanSignedIn(String cbid, String cookies) {
+    return client.request("POST", base(cbid) + "/scan", java.util.Map.of("cookies", cookies), ScanStatus.class);
+  }
+
   /** {@link #scan(String)}, holding the request until it is done or failed, or {@code wait} (≤ 60 s) runs out. */
   public ScanStatus scan(String cbid, java.time.Duration wait) {
     return client.request("POST", base(cbid) + "/scan" + waitQuery(wait), null, ScanStatus.class);
@@ -479,7 +487,7 @@ public final class SitesResource {
   }
 
   /**
-   * Every declaration preset (atlas, forumulate, chatly, cookiemunch, referalli, firstpromoter, partnerstack, tapfiliate, impact, seolyticize): parameters, what each
+   * Every declaration preset (atlas, forumulate, chatly, cookiemunch, referalli, firstpromoter, partnerstack, tapfiliate, impact, seolyticize, lucida, hermetica, watchtower): parameters, what each
    * declared on this site, and whether the vendor's manifest exists yet —
    * {@code GET /v1/sites/{cbid}/cookies/presets}.
    */
@@ -491,7 +499,7 @@ public final class SitesResource {
    * Apply (or re-sync) a vendor preset: declares what that platform writes, marked
    * {@code vendor} — {@code PUT /v1/sites/{cbid}/cookies/presets/{vendor}}. Atlas takes
    * {@code frontendApiHost}/{@code crossSubdomainCookies}/{@code publishableKey}; Chatly {@code publicId}/{@code dragging}/{@code storage}/{@code tracking}/{@code category};
-   * referral presets {@code cookieDomain}/{@code cookieDays}/{@code category} (referalli {@code legacyName}, impact {@code campaignId}).
+   * referral presets {@code cookieDomain}/{@code cookieDays}/{@code category} (referalli {@code legacyName}, impact {@code campaignId}); lucida {@code publicKey}/{@code cookieDomain}/{@code category}, hermetica {@code storage} ("localStorage" or "cookie")/{@code category}, watchtower {@code category}.
    */
   public Map<String, Object> applyCookiePreset(String cbid, String vendor, Map<String, Object> params) {
     return applyCookiePreset(cbid, vendor, params, false);

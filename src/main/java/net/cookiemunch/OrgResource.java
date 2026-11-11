@@ -64,7 +64,7 @@ public final class OrgResource {
 
   /**
    * Connect your own mail provider (recommended) — {@code PUT /v1/org/mail-provider}. Keys:
-   * {@code provider} (brevo, sendgrid, postmark, resend, ses, smtp), {@code fromEmail},
+   * {@code provider} (brevo, sendgrid, postmark, resend, ses, smtp, hermetica), {@code fromEmail},
    * {@code fromName}, {@code replyTo}, {@code secret} (write-only; omit to keep the stored one,
    * same provider only), {@code ses} ({@code region}, {@code accessKeyId}) or {@code smtp}
    * ({@code host}, {@code port}, {@code security}, {@code username}). Replaces the stored one;

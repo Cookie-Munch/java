@@ -41,6 +41,11 @@ public final class RightsIdentityResource {
     return client.requestMap("DELETE", path(cbid), null);
   }
 
+  /** {@code POST /v1/sites/{cbid}/rights-identity/check}: one session token as the rights intake would see it ({@code verified}, {@code reason}, {@code jwt}, {@code detail}, {@code claims}). Files nothing. */
+  public Map<String, Object> check(String cbid, String token) {
+    return client.requestMap("POST", path(cbid) + "/check", java.util.Map.of("token", token));
+  }
+
   private static String path(String cbid) {
     return "/v1/sites/" + Query.pathSegment(cbid) + "/rights-identity";
   }

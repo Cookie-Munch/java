@@ -291,6 +291,14 @@ public final class CookieMunch {
     return getMap("/v1/audit" + new Query().add("limit", limit).add("actor", actor));
   }
 
+  /**
+   * Audit rows at or after {@code since} (ISO 8601 or epoch ms) — {@code GET /v1/audit?since=}, for a
+   * log shipper. An unscoped key or {@code audit:read}. {@code actor} may be null.
+   */
+  public Map<String, Object> audit(Integer limit, String actor, String since) {
+    return getMap("/v1/audit" + new Query().add("limit", limit).add("actor", actor).add("since", since));
+  }
+
   /** Where the audit log is streamed as CloudEvents (never the secret) — {@code GET /v1/audit/sink}. */
   public Map<String, Object> getAuditSink() {
     return getMap("/v1/audit/sink");

@@ -87,6 +87,8 @@ public final class FulfillmentResource {
    * {@code preset_waiting_on_platform}; see {@link #executorPresets}. A null {@code secretKey} with
    * {@code mintFrom} in {@code options} (a partner id that registered an executorKeyUrl) has that partner
    * mint the key for the site under its link; {@code externalId} names the partner account.
+   * {@code options} may carry {@code params}, a map of any of the preset's params by name
+   * ({@code programId} for referalli, {@code projectId} for lucida).
    */
   public Map<String, Object> connectExecutorPreset(String preset, String secretKey, Map<String, Object> options) {
     return client.requestMap("POST", "/v1/dsar/executors", presetBody(preset, secretKey, options));
@@ -121,6 +123,15 @@ public final class FulfillmentResource {
    */
   public Map<String, Object> executorPresets() {
     return client.getMap("/v1/dsar/executors/presets");
+  }
+
+  /**
+   * The platforms a site's cookie rows and partner links imply that have no connected system yet,
+   * with each preset's availability — {@code GET /v1/dsar/executors/suggestions}. {@code cbid} may be
+   * null: every site the key reaches.
+   */
+  public Map<String, Object> executorSuggestions(String cbid) {
+    return client.getMap("/v1/dsar/executors/suggestions" + (cbid == null ? "" : "?cbid=" + Query.encode(cbid)));
   }
 
   /**
@@ -285,6 +296,11 @@ public final class FulfillmentResource {
   /** Run the cm-standard-v2 conformance kit on the canary subject only: {@code POST /v1/dsar/executors/{id}/test {conformance: true}}. */
   public Map<String, Object> executorConformance(String id) {
     return client.requestMap("POST", "/v1/dsar/executors/" + Query.pathSegment(id) + "/test", Map.of("conformance", true));
+  }
+
+  /** The connection's current completion secret and completionUrl, read again (dsar:write, audited): {@code GET /v1/dsar/executors/{id}/completion-secret}. */
+  public Map<String, Object> getExecutorCompletionSecret(String id) {
+    return client.requestMap("GET", "/v1/dsar/executors/" + Query.pathSegment(id) + "/completion-secret", null);
   }
 
   /** A new completion secret, shown once; the old one keeps verifying for 24 hours: {@code POST /v1/dsar/executors/{id}/completion-secret/roll}. */
