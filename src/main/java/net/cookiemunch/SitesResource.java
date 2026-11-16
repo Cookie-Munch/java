@@ -541,6 +541,14 @@ public final class SitesResource {
     return client.requestMap("POST", base(cbid) + "/cookies/plan", input == null ? Map.of() : input);
   }
 
+  /**
+   * Apply what {@link #planCookies} shows, all or nothing — {@code POST /v1/sites/{cbid}/cookies/apply} with the
+   * same body (incl. {@code handOver}): stored only when every step passes; a refusal stores nothing.
+   */
+  public Map<String, Object> applyCookies(String cbid, Map<String, Object> input) {
+    return client.requestMap("POST", base(cbid) + "/cookies/apply", input == null ? Map.of() : input);
+  }
+
   /** The site's own translation account — {@code GET /v1/sites/{cbid}/translation}: provider, key last four and fingerprint. Never the key. */
   public Map<String, Object> translation(String cbid) {
     return client.requestMap("GET", base(cbid) + "/translation", null);
