@@ -106,6 +106,14 @@ public final class SitesResource {
     return client.requestMap("DELETE", base(cbid) + "/partners/" + Query.pathSegment(linkId), null);
   }
 
+  /**
+   * Fix a site link's {@code externalId} or {@code label} in place, keeping the grant —
+   * {@code PATCH /v1/sites/{cbid}/partners/{linkId}} ({@code dryRun}: nothing stored).
+   */
+  public Map<String, Object> updatePartner(String cbid, String linkId, Map<String, Object> input, boolean dryRun) {
+    return client.requestMap("PATCH", base(cbid) + "/partners/" + Query.pathSegment(linkId) + (dryRun ? "?dryRun=1" : ""), new java.util.LinkedHashMap<>(input));
+  }
+
   /** Get a site's config — {@code GET /v1/sites/{cbid}/config}. */
   public Map<String, Object> getConfig(String cbid) {
     return client.getMap(base(cbid) + "/config");

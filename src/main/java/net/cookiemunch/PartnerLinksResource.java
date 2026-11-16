@@ -34,4 +34,13 @@ public final class PartnerLinksResource {
   public Map<String, Object> revoke(String id) {
     return client.requestMap("DELETE", "/v1/partner_links/" + Query.pathSegment(id), null);
   }
+
+  /**
+   * Fix a link's {@code externalId} or {@code label} in place, keeping the grant —
+   * {@code PATCH /v1/partner_links/{id}} ({@code dryRun}: nothing stored). {@code warnings} names executor
+   * keys minted for the old account.
+   */
+  public Map<String, Object> update(String id, Map<String, Object> input, boolean dryRun) {
+    return client.requestMap("PATCH", "/v1/partner_links/" + Query.pathSegment(id) + (dryRun ? "?dryRun=1" : ""), new LinkedHashMap<>(input));
+  }
 }
