@@ -258,6 +258,12 @@ public final class FulfillmentResource {
         "POST", "/v1/dsar/" + Query.pathSegment(requestId) + "/tasks/" + Query.pathSegment(taskId) + "/approve", new LinkedHashMap<>());
   }
 
+  /** Send a failed task again once its system is fixed — {@code POST /v1/dsar/{id}/tasks/{taskId}/retry}. Audited. */
+  public Map<String, Object> retryTask(String requestId, String taskId) {
+    return client.requestMap(
+        "POST", "/v1/dsar/" + Query.pathSegment(requestId) + "/tasks/" + Query.pathSegment(taskId) + "/retry", new LinkedHashMap<>());
+  }
+
   /**
    * Refuse it — {@code POST /v1/dsar/{id}/tasks/{taskId}/reject}: nothing is sent and the task
    * fails with {@code reason} (null for none). Audited.
