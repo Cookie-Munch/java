@@ -38,6 +38,29 @@ public final class KeysResource {
     client.requestVoid("DELETE", "/v1/keys/" + Query.pathSegment(prefix), null);
   }
 
+  /** Account key ({@code orgs:keys}): another org's key prefixes — {@code GET /v1/orgs/{orgId}/keys}. */
+  public List<ApiKeyPrefix> listInOrg(String orgId) {
+    return client.getList("/v1/orgs/" + Query.pathSegment(orgId) + "/keys", ApiKeyPrefix.class);
+  }
+
+  /**
+   * Account key ({@code orgs:keys}): mint a scoped key in another org of the same account — {@code POST
+   * /v1/orgs/{orgId}/keys}. {@code input.scopes} is required; the key is shown ONCE.
+   */
+  public ApiKeyIssued createInOrg(String orgId, ApiKeyIssueInput input) {
+    return client.request("POST", "/v1/orgs/" + Query.pathSegment(orgId) + "/keys", input, ApiKeyIssued.class);
+  }
+
+  /** Account key ({@code orgs:keys}): update a key in another org — {@code PATCH /v1/orgs/{orgId}/keys/{prefix}}. */
+  public Map<String, Object> updateInOrg(String orgId, String prefix, ApiKeyUpdate patch) {
+    return client.requestMap("PATCH", "/v1/orgs/" + Query.pathSegment(orgId) + "/keys/" + Query.pathSegment(prefix), patch);
+  }
+
+  /** Account key ({@code orgs:keys}): revoke a key in another org — {@code DELETE /v1/orgs/{orgId}/keys/{prefix}}. Immediate. */
+  public void revokeInOrg(String orgId, String prefix) {
+    client.requestVoid("DELETE", "/v1/orgs/" + Query.pathSegment(orgId) + "/keys/" + Query.pathSegment(prefix), null);
+  }
+
   /**
    * Rotate a key: a new secret, shown ONCE, with the same name, scopes, property lock and
    * expiry — {@code POST /v1/keys/{prefix}/roll}. The old secret stops working immediately.
