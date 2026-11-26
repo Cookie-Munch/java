@@ -70,6 +70,45 @@ public final class SitesResource {
     return client.requestMapKeepingNulls("PATCH", base(cbid) + "?dryRun=1", new java.util.LinkedHashMap<>(patch));
   }
 
+  /**
+   * Move the site to a new domain — {@code POST /v1/sites/{cbid}/move}: every stored value naming the old
+   * host, rewritten. {@code input} takes {@code to} (required), {@code from}, {@code keepOld}, {@code trustOldDays}.
+   * After a refusal, send {@code retry.body} again: what moved is skipped.
+   */
+  public Map<String, Object> move(String cbid, Map<String, Object> input, boolean dryRun) {
+    return client.requestMap("POST", base(cbid) + "/move" + (dryRun ? "?dryRun=1" : ""), input);
+  }
+
+  /** A tenant: a site for one of your customers, the controller for its own visitors — {@code POST /v1/sites/{cbid}/tenants}. Idempotent by externalId. */
+  public Map<String, Object> createTenant(String parentCbid, Map<String, Object> tenant, boolean dryRun) {
+    return client.requestMap("POST", base(parentCbid) + "/tenants" + (dryRun ? "?dryRun=1" : ""), tenant);
+  }
+
+  /** Up to 100 tenants; send the same list again to resume — {@code POST /v1/sites/{cbid}/tenants/bulk}. */
+  public Map<String, Object> createTenantsBulk(String parentCbid, List<Map<String, Object>> tenants, boolean dryRun) {
+    return client.requestMap("POST", base(parentCbid) + "/tenants/bulk" + (dryRun ? "?dryRun=1" : ""), Map.of("tenants", tenants));
+  }
+
+  /** One page {tenants, nextCursor, total} — {@code GET /v1/sites/{cbid}/tenants}. Null limit or cursor is not sent. */
+  public Map<String, Object> listTenants(String parentCbid, Integer limit, String cursor) {
+    return client.getMap(base(parentCbid) + "/tenants" + new Query().add("limit", limit).add("cursor", cursor));
+  }
+
+  /** {@code GET /v1/sites/{cbid}/tenants/{externalId}}. */
+  public Map<String, Object> getTenant(String parentCbid, String externalId) {
+    return client.getMap(base(parentCbid) + "/tenants/" + Query.pathSegment(externalId));
+  }
+
+  /** Change name, path or controller — {@code PATCH /v1/sites/{cbid}/tenants/{externalId}}. Nulls are sent (name: null clears it). */
+  public Map<String, Object> updateTenant(String parentCbid, String externalId, Map<String, Object> patch, boolean dryRun) {
+    return client.requestMapKeepingNulls("PATCH", base(parentCbid) + "/tenants/" + Query.pathSegment(externalId) + (dryRun ? "?dryRun=1" : ""), new java.util.LinkedHashMap<>(patch));
+  }
+
+  /** Delete a tenant and everything its site holds — {@code DELETE /v1/sites/{cbid}/tenants/{externalId}}. Irreversible. */
+  public Map<String, Object> deleteTenant(String parentCbid, String externalId, boolean dryRun) {
+    return client.requestMap("DELETE", base(parentCbid) + "/tenants/" + Query.pathSegment(externalId) + (dryRun ? "?dryRun=1" : ""), null);
+  }
+
   /** Delete a site — {@code DELETE /v1/sites/{cbid}}. */
   public void delete(String cbid) {
     client.requestVoid("DELETE", base(cbid), null);
